@@ -1,0 +1,67 @@
+// scheme-bluegray_tnr.scheme
+// Stata 16: base = s1color, custom blue/gray palette
+
+#include s1color
+
+// ---- palette p1–p12 ----
+color p1  "0 139 188"     %85  
+color p2  "0 50 250"     %85 
+color p3  "193 5 52"   %85 
+color p4  "188 0 50"     %85 
+color p5  "0 125 0"  %85 
+color p6  "0 250 0"  %85 // #CCCCCC
+color p7  "0 51 102"	 %85 
+color p8  "0 92 171"	 %85 	
+color p9  "51 51 51"	 %85 
+color p10 "128 128 128"  %85 
+color p11 "204 204 204"  %85 
+color p12 "220 238 243"  %85 
+
+// ---- bars/areas/pies/boxes ----
+color p1bar  "0 51 102" %50
+color p2bar  "0 92 171" %50
+color p3bar  "51 51 51" %50
+color p4bar  "128 128 128" %50
+color p5bar  "220 238 243" %50
+color p6bar  "204 204 204" %50
+
+color p1area "0 51 102" %50
+color p2area "0 92 171" %50
+color p3area "51 51 51" %50
+color p4area "128 128 128" %50
+color p5area "220 238 243" %50
+color p6area "204 204 204" %50
+
+color p1pie  "0 51 102"
+color p2pie  "0 92 171"
+color p3pie  "51 51 51"
+color p4pie  "128 128 128"
+color p5pie  "220 238 243"
+color p6pie  "204 204 204"
+
+color p1box  "0 51 102"
+color p2box  "0 92 171"
+color p3box  "51 51 51"
+color p4box  "128 128 128"
+color p5box  "220 238 243"
+color p6box  "204 204 204"
+
+// ---- histogram defaults ----
+color histogram      navy%40
+color histogram_line navy%5
+
+// no frames
+color graphregion "255 255 255"
+linestyle graphregion none
+
+color plotregion  "255 255 255"
+linestyle plotregion none
+
+// legend region: no fill, no border
+color legend none
+linestyle legend none
+
+// ---- background and regions (clean white) ----
+color background "255 255 255"
+color graphregion "255 255 255"
+color plotregion  "255 255 255"
