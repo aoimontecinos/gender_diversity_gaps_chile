@@ -28,15 +28,15 @@ if (Sys.info()["user"] == "fam2175") {
   dropbox <- "/Users/fam2175/Dropbox/"
 }
 
-tesis <- paste0(dropbox, "/PROJECT_Gender_Diversity_Gaps")
-data <- paste0(tesis, "/data")
+dir <- paste0(dropbox, "/PROJECT_Gender_Diversity_Gaps")
+data <- paste0(dir, "/data")
 
 src <- paste0(data, "/src")
 tmp <- paste0(data, "/tmp")
 proc <- paste0(data, "/proc")
 
-tables <- paste0(tesis, "/tables")
-figures <- paste0(tesis, "/figures")
+tables <- paste0(dir, "/tables")
+figures <- paste0(dir, "/figures")
 
 #------------------------------------------------------------------------------
 # 1. Data manipulation 
@@ -45,14 +45,13 @@ figures <- paste0(tesis, "/figures")
 # Define all variables to keep
 final_controls <- c(
   # Demographics
-  "edad_alu", "edad_alu2", "income_decile_1", "income_decile_2", "income_decile_3",  
-  "income_decile_4", "income_decile_5", "income_decile_6", "income_decile_7",  
-  "income_decile_8",  "income_decile_9",  "income_decile_10", "mother_education_cat_1",
-  "mother_education_cat_2", "mother_education_cat_3", "mother_education_cat_4",
-  "mother_education_cat_5", "mother_education_cat_6", "mother_education_cat_7",
-  "mother_education_cat_8", "mother_education_cat_9", "mother_education_cat_10",
-  "mother_education_cat_11", "immigrant_parents", "indigenous_parents",
-  "school_change",
+  "edad_alu_dm", "edad_alu2_dm", "income_decile_cat_1_dm", "income_decile_cat_2_dm",
+  "income_decile_cat_3_dm", "income_decile_cat_4_dm", "income_decile_cat_5_dm", 
+  "income_decile_cat_6_dm", "income_decile_cat_7_dm", "income_decile_cat_8_dm", 
+  "income_decile_cat_9_dm", "mother_education_cat_1_dm", "mother_education_cat_2_dm",
+  "mother_education_cat_3_dm", "mother_education_cat_4_dm", "mother_education_cat_5_dm", 
+  "mother_education_cat_6_dm", "mother_education_cat_7_dm", "mother_education_cat_8_dm", 
+  "immigrant_parents_dm", "indigenous_parents_dm", "school_change_dm",
   
   # 4th grade controls
   "math_norm_4to", "math_confidence_4to", 
