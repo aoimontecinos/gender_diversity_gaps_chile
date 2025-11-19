@@ -5,9 +5,7 @@
 *______________________________________________________________
 
 * Load Data
-use "$data/proc/simce_mineduc_elsoc_2022a", clear
-merge n:1 mrun using "$tmp/simce_mineduc_elsoc_2022_psm.dta", nogen ///
-keepusing(w1 w2) keep(master match)
+use "$data/proc/main.dta", clear
 
 *______________________________________________________________
 * Run Table A1: Descriptives
@@ -76,7 +74,6 @@ eststo m`i': margins math_deciles, post
 }
 }
 
-set scheme tab2
 coefplot ///
 (m1, offset(-.375) color(blue%50) ///
 ciopts(color(blue) recast(rcap))) ///
@@ -93,6 +90,7 @@ xlabel(1 "D1" 2 "D2" 3 "D3" 4 "D4" 5 "D5" ///
 6 "D6" 7 "D7" 8 "D8" 9 "D9" 10 "D10") ///
 legend(order(2 "Physical" 4 "Social Media" 6 "Social" 8 "Verbal") ///
 pos(6) row(1) size(medsmall))
+
 graph export "$figures/corr_aggressions_math.pdf", replace
 
 *-------------------------------------------------
@@ -118,16 +116,6 @@ xlabel(1 "D1" 2 "D2" 3 "D3" 4 "D4" 5 "D5" 6 "D6" 7 "D7" 8 "D8" 9 "D9" 10 "D10") 
 legend(order(2 "Sex or Gender" 4 "Sexual Orientation" 6 "Way of Looking") ///
 pos(6) row(1) size(medsmall))
 graph export "$figures/corr_discrimination_math.pdf", replace
-
-*---------------------------------------------------
-* Gender gap in confidence 
-*---------------------------------------------------
-use "$tmp/simce_mineduc_elsoc_2022b", clear
-
-* Globals to run regressions.
-global genders "cis_woman trans_woman trans_man nb_male nb_female"
-global demographics "imr edad_alu edad_alu2 i.income_decile i.mother_education_cat immigrant_parents indigenous_parents school_change"
-global final_controls "$demographics math_norm_4to math_confidence_4to dependencia4* prom_gral4_norm asistencia4_norm"
 
 *----------------------------------------------------
 * Raw Math Confidence Gap by Math Score. All Genders 

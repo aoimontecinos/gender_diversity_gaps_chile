@@ -72,31 +72,31 @@ base = base %>%
   dplyr::select(mrun,final_controls,
                 math_norm,codigocurso, rbd, gender, genders) %>% 
   mutate(genders = genders %>% as.factor(),
-                   gender = gender %>% as.factor()) %>% drop_na()
+         gender = gender %>% as.factor()) %>% drop_na()
 
 
 #------------------------------------------------------------------------------
-# 2 Implementing the propensity score
+# 2.2 Implementing the propensity score
 #------------------------------------------------------------------------------
 # Specification 
 formula <- as.formula(paste("genders ~", paste(final_controls, collapse = " + ")))
 
 mnps.base <- mnps(formula,
-                    data = base,
-                    estimand = "ATE",
-                    verbose = 0,
-                    stop.method = c("es.mean", "ks.mean"),
-                    n.trees = 2000,
-                    shrinkage = 0.01,
-                    bag.fraction = 0.95)
+                  data = base,
+                  estimand = "ATE",
+                  verbose = 0,
+                  stop.method = c("es.mean", "ks.mean"),
+                  n.trees = 2000,
+                  shrinkage = 0.01,
+                  bag.fraction = 0.95)
 
 
 # Save Data 
 base$w1 <- get.weights(mnps.base, stop.method = "es.mean")
-  
-  base$w2 <- get.weights(mnps.base, stop.method = "ks.mean")
-  
-  haven::write_dta(base,paste0(tmp,"/simce_mineduc_elsoc_2022_psm.dta"))
+
+base$w2 <- get.weights(mnps.base, stop.method = "ks.mean")
+
+haven::write_dta(base,paste0(tmp,"/simce_mineduc_elsoc_2022_psm.dta"))
 
 
 #------------------------------------------------------------------------------
@@ -105,3 +105,54 @@ base$w1 <- get.weights(mnps.base, stop.method = "es.mean")
 # Note: S.E = Standardized Effect Size.
 # Balance criteria as a function of the GBM iteration. 
 plot(mnps.base, plots = 1, figureRows = 3)[[0]]
+
+
+#=============================================================
+# OLD CODE APPENDIX
+#=============================================================
+
+#------------------------------------------------------------------------------
+# 2.1 Functions and iterations to obtain the best propensity score
+#------------------------------------------------------------------------------
+# Specification 
+formula <- as.formula(paste("genders ~", paste(final_controls, collapse = " + ")))
+
+# Parameter grids
+n_trees_grid <- c(1000)
+shrinkage_grid <- c(0.001, 0.005, 0.01)
+bag_fraction_grid <- c(0.9, 1.0)
+
+# Function to evaluate model performance
+evaluate_mnps <- function(n_trees, shrinkage, bag_fraction) {
+  model <- mnps(formula,
+                data = base,
+                estimand = "ATE",
+                verbose = 0,
+                stop.method = c("es.mean", "ks.mean"),
+                n.trees = n_trees,
+                shrinkage = shrinkage,
+                bag.fraction = bag_fraction)
+  
+  # Extract balance statistics
+  balance_stats <- summary(model)$balance
+  
+  # Return mean of es.mean and ks.mean
+  return(mean(c(balance_stats$es.mean.ATE, balance_stats$ks.mean.ATE)))
+}
+
+
+
+## Grid Search
+# Create the parameter grid
+results <- expand.grid(n_trees = n_trees_grid,
+                       shrinkage = shrinkage_grid,
+                       bag_fraction = bag_fraction_grid)
+
+# Applying the function
+results$balance_metric <- mapply(evaluate_mnps, 
+                                 results$n_trees, 
+                                 results$shrinkage, 
+                                 results$bag_fraction)
+
+# Best parameters
+best_params <- results[which.min(results$balance_metric), ]

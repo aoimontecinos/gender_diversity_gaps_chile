@@ -658,22 +658,16 @@ restore
 
 merge m:1 rbd using `religion', nogen keep(master match)
 
-*------------------------------------------------------------
-* 14.  SAVE
-*------------------------------------------------------------
 compress
 save "$data/proc/simce_mineduc_elsoc_2022a", replace
 
 *------------------------------------------------------------
-* 15. PROPENSITY SCORE CALCULATION. WE NEED TO DEMEAN COVS.
+* 14. PROPENSITY SCORE CALCULATION. WE NEED TO DEMEAN COVS.
 *------------------------------------------------------------
-use "$data/proc/simce_mineduc_elsoc_2022a", clear
-
-global final_controls "imr edad_alu edad_alu2 income_decile mother_education_cat_* immigrant_mother school_change asistencia4 math_norm_4to math_confidence_4to prom_gral4"
-
 tab mother_education_cat, gen(mother_education_cat_)
+tab income_decile, gen(income_decile_cat_)
 
-foreach var of varlist $final_controls {
+foreach var of varlist $final_covs {
 bys rbd: egen aux_mean = mean(`var')
 bys rbd: egen aux_sd = sd(`var')
 egen global_sd = sd(`var')
@@ -683,3 +677,6 @@ cap drop aux_mean aux_sd global_sd
 }
 
 save "$data/proc/simce_mineduc_elsoc_2022b", replace
+
+cap rm "$tmp/simce_data.dta"
+cap rm "$tmp/simce_temporal.dta"

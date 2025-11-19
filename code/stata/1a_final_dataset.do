@@ -1,5 +1,3 @@
-rsource using "$code/R/01_ps_gbm.r"
-
 *--------------------------------------------------------
 * FINAL DATASET 
 *--------------------------------------------------------
@@ -18,4 +16,4 @@ qui reghdfe math_confidence_2do $genders w1 w2 math_norm $final_controls
 keep if e(sample)
 
 // Save new dataset
-save "$tmp/simce_mineduc_elsoc_2022b", replace
+save "$data/proc/main.dta", replace

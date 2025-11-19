@@ -66,7 +66,7 @@ global final_covs "imr edad_alu edad_alu2 income_decile mother_education_cat_* i
 
 * Data Construction 
 do "$code/stata/1_data_construction.do"
-
+stop 
 // You should run the R code: $code/R/01_ps_gbm.R 
 do "$code/stata/1a_final_dataset.do"
 

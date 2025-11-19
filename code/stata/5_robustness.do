@@ -1,11 +1,15 @@
+*______________________________________________________________
+* Author: Francine Montecinos
+* Last edition: November 19, 2025
+* Action: Robustness Checks 
+*______________________________________________________________
 
+*______________________________________________________________
+* 1. Exact Matching
+*______________________________________________________________
 
-*------------------------------------------------
-* Exact Matching
-*------------------------------------------------
-use "$tmp/simce_mineduc_elsoc_2022b", clear
-keep if math_confidence_2do!=. & math_confidence_4to!=.
-
+use "$data/proc/main.dta", clear
+keep mrun rbd codigocurso math* gender ${genders}  $final_controls
 
 // Create variables 
 cap drop gen_dummy* pscore*
@@ -129,9 +133,10 @@ file close fh
 restore 
 }
 
-*--------------------------------------------------------------------
-* Robustness Check: Changing Trans Samples
-*--------------------------------------------------------------------
+*______________________________________________________________
+* 2. Changing Trans Samples
+*______________________________________________________________
+
 * Creating variables 
 gen r_gender_1 = gender 
 replace r_gender_1 = 5 if (cest_p01_2do==4|cest_p01_2do==5) & sex_alu==1
@@ -206,7 +211,9 @@ keep(*.r_gender_1) nogaps nonotes booktabs ///
 s(fixeds controls N, fmt( %12.0f %12.0f %12.0f) ///
 label("School FE" "Controls" "Observations"))
 
+*------------------------------------
 ** Sex and gender interactions.
+*------------------------------------
 
 * Interaction model (comparing by sex, trans and nb)
 eststo m1: reghdfe math_norm sex_alu##gender_diverse $final_controls, ///
@@ -243,63 +250,22 @@ absorb(rbd) vce(cl codigocurso)
 eststo m6a: margins sex_alu, dydx(gender_diverse) post
 
 esttab m1 m2 m3 m4 m5 m6 m1a m2a m3a m4a m5a m6a using ///
-"$output2/tables/robust_ame.tex", label replace ///
+"$tables/robust_ame.tex", label replace ///
 b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) ///
 keep(2.gender_diverse:1.sex_alu 2.sex_alu 2.gender_diverse ///
 2.sex_alu#2.gender_diverse) ///
 mtitles("Model 1" "Model 2" "Model 3" "Model 1" "Model 2" "Model 3")
 
-
-*--------------------------------------------------------------------
-* Robustness Check: Changing Dependent Variable
-*--------------------------------------------------------------------
-
-* Math score standardized at school level 
-eststo m1: qui reghdfe math_norm_rbd $genders , absorb(rbd) vce(cl codigocurso)
-qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols " ", replace 
-qui estadd local school4 " ", replace 
-qui estadd local math4 " ", replace 
-
-eststo m2: qui reghdfe math_norm_rbd $genders ${demographics}, ///
-absorb(rbd) vce(cl codigocurso)
-qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols "$ \checkmark $", replace 
-qui estadd local school4 " ", replace 
-qui estadd local math4 " ", replace 
-
-eststo m3: qui reghdfe math_norm_rbd $genders ${demographics} ///
-${mineduc4}, absorb(rbd) vce(cl codigocurso)
-qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols "$ \checkmark $", replace 
-qui estadd local school4 "$ \checkmark $", replace 
-qui estadd local math4 " ", replace 
-
-eststo m4: qui reghdfe math_norm_rbd $genders ${final_controls}, ///
-absorb(rbd) vce(cl codigocurso)
-qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols "$ \checkmark $", replace 
-qui estadd local school4 "$ \checkmark $", replace 
-qui estadd local math4 "$ \checkmark $", replace 
-
-esttab m1 m2 m3 m4 using "$output2/tables/reg1_rbd.tex", label replace /// 
-b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) ///
-keep($genders) s(fixeds icontrols school4 math4 N, ///
-label("School FE" "Demographics" "4 Controls" "4 Math Score" "Observations") ///
-fmt( %5.0f))
-
-
-eststo clear
-qui: mmqreg math_norm ${genders} ${final_controls}, ///
-absorb(rbd) nols quantile(10 30 50 70 90 95) cluster(codigocurso)
-
-outreg2 using "$output2/tables/qreg1_rbd.tex", label replace dec(3) drop($final_controls)
-
+*______________________________________________________________
+* 3. Categorical variables 
+*______________________________________________________________
+*------------------------------------------
 * Math Confidence (Categorical)
+*------------------------------------------
 gen categorical_confidence = cest_p03_09_2do
 
 eststo clear
-qui ologit categorical_confidence i.gender $final_controls_confidence, cluster(codigocurso)
+qui ologit categorical_confidence i.gender $final_controls, cluster(codigocurso)
 eststo ologit
 foreach o in 1 2 3 4 {
 qui margins, dydx(gender) predict(outcome(`o')) post
@@ -308,17 +274,19 @@ estimates restore ologit
 }
 eststo drop ologit
 
-esttab using "$output2/tables/ologit_confidence.tex", label replace ///
+esttab using "$tables/ologit_confidence.tex", label replace ///
 b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels
 
+*------------------------------------------------------------
 * Aggression (Categorical). Focus on social aggressions.
+*------------------------------------------------------------
 gen categorical_social = 1 if cest_p14_03_2do==1 | cest_p14_04_2do==1
 forv i = 2/5{
 replace categorical_social = `i' if cest_p14_03_2do==`i' | cest_p14_04_2do==`i'
 }
 
 eststo clear
-qui ologit categorical_social i.gender $final_controls_confidence, cluster(codigocurso)
+qui ologit categorical_social i.gender $final_controls, cluster(codigocurso)
 eststo ologit
 foreach o in 1 2 3 4 5 {
 qui margins, dydx(gender) predict(outcome(`o')) post
@@ -327,6 +295,6 @@ estimates restore ologit
 }
 eststo drop ologit
 
-esttab using "$output2/tables/ologit_aggression.tex", label replace ///
+esttab using "$tables/ologit_aggression.tex", label replace ///
 b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels
 

@@ -1,12 +1,12 @@
 *______________________________________________________________
 * Author: Francine Montecinos
-* Last edition: October 27, 2025
+* Last edition: November 19, 2025
 * Action: Main Regressions for gender gaps in math
 *______________________________________________________________
 clear all
 set more off
 
-use "$data/proc/simce_mineduc_elsoc_2022b", replace
+use "$data/proc/main.dta", clear
 
 gen interaction = .
 label var interaction "Interaction"

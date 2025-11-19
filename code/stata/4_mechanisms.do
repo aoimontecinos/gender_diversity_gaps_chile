@@ -3,6 +3,7 @@
 * Last edition: October 27, 2025
 * Action: Potential Mechanisms + Heterogeneity
 *______________________________________________________________
+use "$data/proc/main.dta", clear
 
 *___________________________________________________*
 * 1. Aggressions and Discrimination 
