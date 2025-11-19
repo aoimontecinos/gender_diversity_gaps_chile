@@ -67,7 +67,15 @@ global final_covs "imr edad_alu edad_alu2 income_decile mother_education_cat_* i
 * Data Construction 
 do "$code/stata/1_data_construction.do"
 
-// You should run the R code: $code/R/01_ps_gbm.R 
+qui {
+noisily: dis "====================================================="
+noisily: dis "Stop Here." 
+noisily: dis "Run code/R/01_ps_gbm.R"
+noisily: dis "====================================================="	
+noisily: dis as err "After running the R code, select all the code below and run"
+}
+
+* Final Dataset 
 do "$code/stata/1a_final_dataset.do"
 
 * Descriptives 

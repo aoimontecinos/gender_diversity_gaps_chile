@@ -32,17 +32,19 @@ Replication materials for "The Gender Diversity Gaps in Mathematics" (Francine M
 
 ## Required packages
 **Stata (install from SSC unless noted)**
-- `reghdfe` (plus dependencies such as `ftools`)
-- `estout` (provides `eststo`/`esttab`)
+- `ftools` 
+- `gtools` 
+- `reghdfe`
+- `estout` 
 - `outreg2`
 - `psmatch2`
 - `oaxaca`
-- `rsource` (to call R from Stata)
 
 Install example:
 ```
-ssc install reghdfe, replace
 ssc install ftools, replace
+ssc install gtools, replace
+ssc install reghdfe, replace
 ssc install estout, replace
 ssc install outreg2, replace
 ssc install psmatch2, replace
@@ -60,21 +62,18 @@ install.packages(c(
 ```
 
 ## How to run
-1. Set the Dropbox root expected by the scripts. If your username is not auto-detected (`aoimo` or `fam2175`), edit `code/stata/0_makefile.do` to set `global dropbox "<your Dropbox path>"` before running. Optionally define `global output2 "$results"` for robustness tables that reference `$output2`.
+1. Set the Dropbox root expected by the scripts. Edit `code/stata/0_makefile.do` to set `global dropbox "<your Dropbox path>"` before running. 
 2. Place the SIMCE (confidential) and MINEDUC (open) raw files in `data/src` under that Dropbox path. The workflow writes intermediate files to `data/tmp` and `data/dta`.
 3. Open Stata in the repository root and run:
    ```
    do code/stata/0_makefile.do
    ```
    This script sets globals, builds data, and executes `1_data_construction.do` -> `1a_final_dataset.do` (which calls the R script) -> `2_descriptives.do` -> `3_results.do` -> `4_mechanisms.do` -> `5_robustness.do` -> `6_selection.do`.
-4. Ensure R 4.5.1 is on the system path so `rsource` can execute `code/R/01_ps_gbm.R`.
 
 ## Outputs
 - Logs: `log/`
-- Tables: `tables/` (LaTeX tables such as `reg1_*.tex`, `robust_*`, `heterogeneity_*`); some robustness tables use `$output2/tables` - set `global output2 "$results"` if you want them alongside other outputs.
+- Tables: `tables/` 
 - Figures: `figures/`
-- Results/other exports: `results/`
-- All output roots live under `Dropbox/Universidad/Tesis/` as set in `0_makefile.do`.
 
 ## Expected runtime
 - End-to-end pipeline (Stata + R) runs in about 1 hour on the hardware listed above.
