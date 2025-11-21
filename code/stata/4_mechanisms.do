@@ -4,6 +4,7 @@
 * Action: Potential Mechanisms + Heterogeneity
 *______________________________________________________________
 use "$data/proc/main.dta", clear
+gen w0 = 1
 
 *___________________________________________________*
 * 1. Aggressions and Discrimination 

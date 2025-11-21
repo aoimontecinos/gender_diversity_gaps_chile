@@ -5,122 +5,132 @@
 *______________________________________________________________
 
 *______________________________________________________________
-* 1. Propensity score matching with clustered bootstrap (Julia)
+* 1. Exact Matching
 *______________________________________________________________
 
 use "$data/proc/main.dta", clear
 keep mrun rbd codigocurso math* gender ${genders} $final_covs
 
-// prepare labels and settings
-local outcomes math_norm math_confidence_2do
-local controls ${final_controls}
+// Create variables 
+cap drop gen_dummy* pscore*
+tabulate gender, gen(gen_dummy_)
+
+// rbd fixed efffects
+xtset rbd
+
+// propensity scores (manual)
+forv i = 1/6 {
+	replace gen_dummy_`i' = . if gender!=`i' & gender!=1
+	if `i'!=1 {
+		xtlogit gen_dummy_`i' ${final_controls}
+		predict pscore_`i'
+	} 
+}
+
+// seed for replication
+set seed 123
+
+//labels (with spaces) and their dummy ids
 local ids 2 3 4 5
-local controls "${final_controls}"
-local outcomes "math_norm math_confidence_2do"
 local lab2 "Cis woman"
 local lab3 "Trans woman"
 local lab4 "Trans man"
 local lab5 "NB Male"
+local lab6 "NB Female"
 
-*-------------------------
-* Initializing Julia 
-*-------------------------
-// Install required Julia packages (run once per machine)
-jl: import Pkg; Pkg.add("StatsModels"); Pkg.add("GLM"); Pkg.add("StatsBase"); Pkg.add("Random"); Pkg.add("NearestNeighbors")
+foreach outcome of varlist math_norm math_confidence_2do {
+tempfile results
+tempname pf
+capture postclose `pf'
+postfile `pf' str32 treat ///
+    double b1 b2 b3 b4  ///
+    double se1 se2 se3 se4  ///
+    using "`results'", replace
 
-// Load Julia libs for the run
-jl: using DataFrames, StatsModels, GLM, StatsBase, Random, NearestNeighbors
-
-// Pull current Stata data into Julia and set up locals
-jl: df = DataFrame(Stata.reload())
-jl: controls = Symbol[split("`controls'", " ")...]
-jl: outcomes = Symbol[split("`outcomes'", " ")...]
-jl: treats = Dict(2 => "`lab2'", 3 => "`lab3'", 4 => "`lab4'", 5 => "`lab5'")
-
-// Define ATT bootstrap with PSM and clustered resampling
-jl: function att_boot(df, treat_val, outcome; controls, cluster=:rbd, reps=100, nn_list=[1,2,3,4]); ///
-     sdf = df[(df.gender .== 1) .| (df.gender .== treat_val), :]; ///
-     sdf.treat = sdf.gender .== treat_val; ///
-     if sum(sdf.treat)==0 || sum(.!sdf.treat)==0; return DataFrame(); end; ///
-     f = Term(:treat) ~ sum(Term.(controls)); ///
-     m = glm(f, sdf, Binomial(), LogitLink()); ///
-     sdf.pr = predict(m); ///
-     clusters = unique(sdf[!, cluster]); ///
-     out = DataFrame(outcome=String[], treat=String[], nn=Int[], b=Float64[], se=Float64[], lb=Float64[], ub=Float64[]); ///
-     for nn in nn_list
-         atts = Float64[];
-         for b in 1:reps
-             boot_ids = sample(clusters, length(clusters); replace=true);
-             boot = reduce(vcat, [sdf[sdf[!, cluster] .== cid, :] for cid in boot_ids]);
-             control = boot[boot.treat .== false, :];
-             treated = boot[boot.treat .== true, :];
-             if nrow(control)==0 || nrow(treated)==0; continue; end;
-             tree = KDTree(reshape(control.pr, 1, :));
-             diffs = Float64[];
-             for row in eachrow(treated)
-                 k = min(nn, nrow(control));
-                 idxs = knn(tree, [row.pr], k)[1];
-                 push!(diffs, row[outcome] - mean(control[outcome][idxs]));
-             end;
-             if !isempty(diffs); push!(atts, mean(diffs)); end;
-         end;
-         if !isempty(atts)
-             m_att = mean(atts);
-             se_att = std(atts);
-             qs = quantile(atts, [0.025, 0.975]);
-             push!(out, (string(outcome), treats[treat_val], nn, m_att, se_att, qs[1], qs[2]));
-         end;
-     end;
-     return out;
-     end
-
-// Run bootstrap for all outcomes/treatments and return to Stata
-jl: results = DataFrame(outcome=String[], treat=String[], nn=Int[], b=Float64[], se=Float64[], lb=Float64[], ub=Float64[])
-jl: for outcome in outcomes; for tr in keys(treats); reps = tr == 2 ? 10 : 100; res = att_boot(df, tr, outcome; controls=controls, reps=reps); append!(results, res); end; end
-jl: Stata.store!(results)
-
-
-* Back in Stata: reshape to wide and write tables (by outcome)
-tempfile res_all
-save "`res_all'", replace
-
-foreach outcome of local outcomes {
-    preserve
-    use "`res_all'", clear
-    keep if outcome=="`outcome'"
-    drop outcome
-    reshape wide b se lb ub, i(treat) j(nn)
-
-    if "`outcome'"=="math_norm" local var_name "Mathematics Score"
-    if "`outcome'"=="math_confidence_2do" local var_name "Mathematics Confidence"
-
-    file open fh using "$tables/psmatch2_robustness_`var_name'.tex", write replace text
-    file write fh "\begin{tabular}{lcccc}" _n
-    file write fh "\toprule" _n
-    file write fh "& \multicolumn{4}{c}{Dependent variable: 10th grade `var_name'} \\" _n
-    file write fh "& \multicolumn{4}{c}{Number of Nearest Neighbors} \\" _n
-    file write fh "Treatment & NN=1 & NN=2 & NN=3 & NN=4 \\" _n
-    file write fh "\midrule" _n
-
-    quietly forvalues r = 1/`=_N' {
-        file write fh "`=treat[`r']'" " & " ///
-            "`: display %6.3f b1[`r']'" " & " ///
-            "`: display %6.3f b2[`r']'" " & " ///
-            "`: display %6.3f b3[`r']'" " & " ///
-            "`: display %6.3f b4[`r']'" " \\" _n
-
-        file write fh " & " ///
-            "(`: display %6.3f se1[`r']')" " & " ///
-            "(`: display %6.3f se2[`r']')" " & " ///
-            "(`: display %6.3f se3[`r']')" " & " ///
-            "(`: display %6.3f se4[`r']')" " \\\\" _n
-
-        if `r' < `=_N' file write fh "\addlinespace" _n
+	
+foreach trnum of local ids {
+    * init cells to missing (in case a j fails)
+    forvalues j=1/4 {
+        local b`j' = .
+        local se`j' = .
     }
-    file write fh "\bottomrule" _n
-    file write fh "\end{tabular}" _n
-    file close fh
-    restore
+
+	if `trnum'==2 local reps_num = 10
+	if `trnum'!=2 local reps_num = 100 
+
+    forvalues j=1/4 {
+        if `j'==1 {
+            bootstrap r(att), reps(`reps_num') rseed(123) bca cluster(rbd): ///
+			psmatch2 gen_dummy_`trnum', ties out(`outcome') pscore(pscore_`trnum')
+        }
+        else {
+            bootstrap r(att), reps(`reps_num') rseed(123) bca cluster(rbd): ///
+			psmatch2 gen_dummy_`trnum', n(`j') out(`outcome') pscore(pscore_`trnum')
+           
+        }
+
+        * prefer BC; fallback to percentile if BC missing
+        matrix ci = e(ci_bc)
+        if missing(ci[1,1]) | missing(ci[2,1]) {
+            matrix ci = e(ci_percentile)
+        }
+
+        scalar lb = ci[1,1]
+        scalar ub = ci[2,1]
+        scalar b_bc  = (lb + ub)/2
+        scalar se_bc = (ub - lb)/(2*invnormal(0.975))
+
+        local b`j'  = b_bc
+        local se`j' = se_bc
+		dis "`b`j'' (`se`j'')"
+    }
+
+    * get the pretty label for this trnum
+    local tr = "`lab`trnum''"
+
+    post `pf' ("`tr'") ///
+        (`b1') (`b2') (`b3') (`b4') (`b5') ///
+        (`se1') (`se2') (`se3') (`se4') (`se5')
+}
+postclose `pf'
+
+preserve 
+use "`results'", clear
+list, noobs
+
+*----- LaTeX with two rows per treatment (coef, then SEs)
+if "`outcome'"=="math_norm" local var_name "Mathematics Score"
+if "`outcome'"=="math_confidence_2do" local var_name "Mathematics Confidence"
+
+file open fh using "$tables/psmatch2_robustness_`var_name'.tex", write replace text
+file write fh "\begin{tabular}{lcccc}" _n
+file write fh "\toprule" _n
+file write fh "& \multicolumn{4}{c}{Dependent variable: 10th grade `var_name'} \\"
+file write fh "& \multicolumn{4}{c}{Number of Nearest Neighbors} \\"
+file write fh "Treatment & NN=1 & NN=2 & NN=3 & NN=4 \\" _n
+file write fh "\midrule" _n
+
+quietly forvalues r = 1/`=_N' {
+    file write fh "`=treat[`r']'" " & " ///
+        "`: display %6.3f b1[`r']'" " & " ///
+        "`: display %6.3f b2[`r']'" " & " ///
+        "`: display %6.3f b3[`r']'" " & " ///
+        "`: display %6.3f b4[`r']'" " & " ///
+        "`: display %6.3f b5[`r']'" " \\" _n
+
+    file write fh " & " ///
+        "(`: display %6.3f se1[`r']')" " & " ///
+        "(`: display %6.3f se2[`r']')" " & " ///
+        "(`: display %6.3f se3[`r']')" " & " ///
+        "(`: display %6.3f se4[`r']')" " & " ///
+        "(`: display %6.3f se5[`r']')" " \\\\" _n
+
+    if `r' < `=_N' file write fh "\addlinespace" _n
+}
+file write fh "\bottomrule" _n
+file write fh "\end{tabular}" _n
+file close fh
+restore 
 }
 
 *______________________________________________________________

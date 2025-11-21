@@ -1,7 +1,7 @@
 preserve 
 
 * Load Data
-use "$tmp/simce_mineduc_elsoc_2022b", clear
+use "$data/proc/main.dta", clear
 
 qui: reghdfe math_confidence_2do i.gender $final_controls [aw = w2], absorb(rbd) 
 keep if e(sample)

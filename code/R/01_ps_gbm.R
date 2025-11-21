@@ -15,6 +15,7 @@ library(twang)
 library(kableExtra)
 library(survey)
 library(parallel)
+library(gridExtra)
 
 #------------------------------------------------------------------------------
 # Set locals and defining the environment 
@@ -41,14 +42,12 @@ figures <- paste0(dir, "/figures")
 #------------------------------------------------------------------------------
 # 1. Data manipulation 
 #------------------------------------------------------------------------------
+start_time = Sys.time()  
 
 # Define all variables to keep
 final_controls <- c(
   # Demographics
-  "edad_alu_dm", "edad_alu2_dm", "income_decile_cat_1_dm", "income_decile_cat_2_dm",
-  "income_decile_cat_3_dm", "income_decile_cat_4_dm", "income_decile_cat_5_dm", 
-  "income_decile_cat_6_dm", "income_decile_cat_7_dm", "income_decile_cat_8_dm", 
-  "income_decile_cat_9_dm", "mother_education_cat_1_dm", "mother_education_cat_2_dm",
+  "edad_alu_dm", "edad_alu2_dm", "income_decile_dm", "mother_education_cat_1_dm", "mother_education_cat_2_dm",
   "mother_education_cat_3_dm", "mother_education_cat_4_dm", "mother_education_cat_5_dm", 
   "mother_education_cat_6_dm", "mother_education_cat_7_dm", "mother_education_cat_8_dm", 
   "immigrant_parents_dm", "indigenous_parents_dm", "school_change_dm",
@@ -97,10 +96,32 @@ base$w1 <- get.weights(mnps.base, stop.method = "es.mean")
   
   haven::write_dta(base,paste0(tmp,"/simce_mineduc_elsoc_2022_psm.dta"))
 
+end_time = Sys.time()  
+end_time - start_time # 31 minutes 
 
 #------------------------------------------------------------------------------
 # 3.1 Descriptive Statistics about the performance of the PSM 
 #------------------------------------------------------------------------------
 # Note: S.E = Standardized Effect Size.
 # Balance criteria as a function of the GBM iteration. 
-plot(mnps.base, plots = 1, figureRows = 3)[[0]]
+pdf(file = paste0(figures,"/my_plot.pdf"))
+  
+  # 1. Capture the list of plots
+  # We assign it to a variable 'plot_list' instead of printing it immediately.
+  plot_list <- plot(mnps.base, plots = 1)
+  
+  print(plot_list)[[1]]
+  
+  # 2. Update the ylim for EVERY plot in the list
+  # We use 'lapply' to loop through the list and apply the update to each plot.
+  plot_list_fixed <- lapply(plot_list, function(p) {
+    update(p, ylim = c(-0.005, 0.105))
+  })
+  
+  # 3. Export 
+  combined <- arrangeGrob(grobs = plot_list_fixed, ncol = 2)
+  
+  ggsave(paste0(figures,"/balance_mnps.pdf"),
+         plot   = combined,
+         width  = 10,
+         height = 8)

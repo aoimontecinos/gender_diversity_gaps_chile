@@ -108,7 +108,6 @@ eststo m`i': margins math_deciles, post
 }
 }
 
-set scheme tab2
 coefplot m1 m2 m3, vertical ///
 xtitle("Math Score Decile", size(medsmall)) ///
 ytitle("Percent of students who reported discrimination", size(medsmall)) ///

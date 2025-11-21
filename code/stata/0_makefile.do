@@ -62,7 +62,9 @@ set scheme bluegray_tnr
 global genders "cis_woman trans_woman trans_man nb_male nb_female"
 global demographics "imr edad_alu edad_alu2 i.income_decile i.mother_education_cat immigrant_parents indigenous_parents school_change"
 global final_controls "$demographics math_norm_4to math_confidence_4to dependencia4* prom_gral4_norm asistencia4_norm"
-global final_covs "imr edad_alu edad_alu2 income_decile mother_education_cat_* income_decile_cat_* immigrant_parents indigenous_parents school_change math_norm_4to math_confidence_4to asistencia4_norm prom_gral4_norm"
+global final_covs "imr edad_alu edad_alu2 income_decile mother_education_cat mother_education_cat_* income_decile_cat_* immigrant_parents indigenous_parents school_change math_norm_4to math_confidence_4to asistencia4_norm prom_gral4_norm dependencia4*"
+
+stop
 
 * Data Construction 
 do "$code/stata/1_data_construction.do"
