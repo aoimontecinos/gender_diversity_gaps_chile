@@ -102,8 +102,8 @@ local var "prom_gral_norm"
 tw (connect `var' grade if gender==1) (connect `var' grade if gender==2) ///
 (connect `var' grade if gender==3) (connect `var' grade if gender==4) ///
 (connect `var' grade if gender==5) (connect `var' grade if gender==6), ///
-legend(order(1 "Cis Man" 2 "Cis Woman" 3 "Trans Woman" ///
-4 "Trans Man" 5 "NB Male" 6 "NB Female")) xtitle("Academic grade") ///
+legend(order(1 "Cis boys" 2 "Cis girls" 3 "Trans girls" ///
+4 "Trans boys" 5 "NB AMABs" 6 "NB AFABs")) xtitle("Academic grade") ///
 ytitle("GPA") 
 
 , by(gender)

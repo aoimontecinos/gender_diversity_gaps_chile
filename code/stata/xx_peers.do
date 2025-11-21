@@ -171,8 +171,8 @@ mtitles("Baseline" "Women Peers" "Trans or NB Peers" "Female Peers Math Score" /
  "Teacher Age" "Teacher Sex" "All") label replace ///
 stats(cm_mean cw_pc tw_pc tm_pc nbm_pc nbf_pc r2 N, ///
 fmt(%9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %12.0f) ///
-labels(`"Cis Men Mean"' `"CW Gap Variation"' `"TW Gap Variation"' ///
-`"TM Gap Variation"' `"NBM Gap Variation"' `"NBF Gap Variation"' ///
+labels(`"Cis boys mean"' `"Cis girls gap variation"' `"Trans girls gap variation"' ///
+`"Trans boys gap variation"' `"NB AMABs gap variation"' `"NB AFABs gap variation"' ///
 `"R-squared"' `"Observations"' ))
 }
 restore 
@@ -265,8 +265,8 @@ mtitles("Baseline" "Women Peers" "Trans or NB Peers" "Female Peers Math Score" /
  "Teacher Age" "Teacher Sex" "All") label replace ///
 stats(cm_mean cw_pc tw_pc tm_pc nbm_pc nbf_pc r2 N, ///
 fmt(%9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %12.0f) ///
-labels(`"Cis Men Mean"' `"CW Gap Variation"' `"TW Gap Variation"' ///
-`"TM Gap Variation"' `"NBM Gap Variation"' `"NBF Gap Variation"' ///
+labels(`"Cis boys mean"' `"Cis girls gap variation"' `"Trans girls gap variation"' ///
+`"Trans boys gap variation"' `"NB AMABs gap variation"' `"NB AFABs gap variation"' ///
 `"R-squared"' `"Observations"' ))
 }
 restore 

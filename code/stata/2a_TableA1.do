@@ -234,7 +234,7 @@ file open myfile using "$tables/descriptives.tex", write replace
 file write myfile "\begin{tabular}{lcccccc}" _n
 file write myfile "\hline" _n
 // Write the header row
-file write myfile "& \textbf{Cis Men} & \textbf{Cis Women} & \textbf{Trans Women} & \textbf{Trans Men} & \textbf{NB AMAB} & \textbf{NB AFAB} \\" _n
+file write myfile "& \textbf{Cis boys} & \textbf{Cis girls} & \textbf{Trans girls} & \textbf{Trans boys} & \textbf{NB AMABs} & \textbf{NB AFABs} \\" _n
 file write myfile "\hline" _n
 
 * Add group headers and format variable names nicely

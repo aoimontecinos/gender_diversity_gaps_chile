@@ -48,15 +48,15 @@ coefplot (m1, offset(-.375) color(blue%50) ///
 		ylabel(,noticks) ///
         xlabel(-.1(0.05)0.3, format(%3.2f)) ///
         ytitle("") xline(0, lpattern(dash)) ///
-		xtitle("Percent of students who reported aggressions compared to cisgender men", ///
+		xtitle("Percent of students who reported aggressions compared to cis boys", ///
 		size(medsmall)) ///
         legend(order(1 "Physical" 3 "Verbal" ///
 		5 "Social" 7 "Social Media") ///
         pos(6) rows(1) size(medsmall) ///
         symxsize(*1.5) symysize(*1.5)) ///
         swapnames ///
-        eqlabels("Cisgender Women" "Transgender Women" ///
-		"Transgender Men" "Non Binary Males" "Non Binary Females")
+        eqlabels("Cis girls" "Trans girls" ///
+		"Trans boys" "NB AMABs" "NB AFABs")
 
 graph export "$figures/figure4_aggression.pdf", replace
 
@@ -133,8 +133,8 @@ tw (scatter dots_fit dots_x if gender==1, color(blue%80) msymbol(O)) ///
 (scatter dots_fit dots_x if gender==4, color(red%80) msymbol(Dh)) ///
 (scatter dots_fit dots_x if gender==5, color(green%80) msymbol(T)) ///
 (scatter dots_fit dots_x if gender==6, color(midgreen%80) msymbol(Th)), ///
-legend(order(1 "Cis Men" 2 "Cis Women" 3 "Trans Women" ///
-4 "Trans Men" 5 "NB Male" 6 "NB Female") row(2)) ///
+legend(order(1 "Cis boys" 2 "Cis girls" 3 "Trans girls" ///
+4 "Trans boys" 5 "NB AMABs" 6 "NB AFABs") row(2)) ///
 ytitle("Math Confidence at 10th grade", size(medsmall))  ///
 xtitle("Math Score at 10th grade", size(medsmall)) 
 
@@ -161,7 +161,7 @@ use "$tmp/fig_aux.dta", clear
 tw (scatter dots_fit dots_x if gender==1, color(blue%80) msymbol(O)) ///
 (scatter dots_fit dots_x if gender==2, color(ebblue%80) msymbol(D)) ///
 (scatter dots_fit dots_x if gender==3, color(cranberry%80) msymbol(T)), ///
-legend(order(1 "Cis Boys" 2 "Cis Girls" 3 "Gender Diverse Students") row(1)) ///
+legend(order(1 "Cis boys" 2 "Cis girls" 3 "Gender Diverse Students") row(1)) ///
 ytitle("Math Confidence at 10th grade", size(medsmall)) name(binsreg_raw, replace) ///
 xtitle("Math Score at 10th grade", size(medsmall)) yscale(range(.35 1)) ylabel(.4(.1)1)
 
@@ -202,8 +202,8 @@ tw (scatter dots_fit dots_x if gender==1, color(blue%80) msymbol(O)) ///
 (scatter dots_fit dots_x if gender==4, color(red%80) msymbol(Dh)) ///
 (scatter dots_fit dots_x if gender==5, color(green%80) msymbol(T)) ///
 (scatter dots_fit dots_x if gender==6, color(midgreen%80) msymbol(Th)), ///
-legend(order(1 "Cis Men" 2 "Cis Women" 3 "Trans Women" ///
-4 "Trans Men" 5 "NB Male" 6 "NB Female") row(2)) ///
+legend(order(1 "Cis boys" 2 "Cis girls" 3 "Trans girls" ///
+4 "Trans boys" 5 "NB AMABs" 6 "NB AFABs") row(2)) ///
 ytitle("Estimated Mathematics Confidence Gap", size(medsmall))  ///
 xtitle("Math Score at 10th grade", size(medsmall)) ylabel(-.3(.1).2) ///
 yscale(range(-.3 .16)) yline(0, lpattern(dash))

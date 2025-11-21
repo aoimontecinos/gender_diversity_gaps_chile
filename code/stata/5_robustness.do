@@ -1,3 +1,4 @@
+cls
 *______________________________________________________________
 * Author: Francine Montecinos
 * Last edition: November 19, 2025
@@ -13,71 +14,62 @@ keep mrun rbd codigocurso math* gender ${genders} $final_covs
 
 // prepare labels and settings
 local outcomes math_norm math_confidence_2do
-local controls ${final_controls}
-local ids 2 3 4 5
-local controls "${final_controls}"
+local controls ${final_covs}
+local ids 2 3 4 5 6
+local controls "${final_covs}"
 local outcomes "math_norm math_confidence_2do"
-local lab2 "Cis woman"
-local lab3 "Trans woman"
-local lab4 "Trans man"
-local lab5 "NB Male"
+local lab2 "Cis girls"
+local lab3 "Trans girls"
+local lab4 "Trans boys"
+local lab5 "NB AMABs"
+local lab6 "NB AFABs"
 
-*-------------------------
-* Initializing Julia 
-*-------------------------
-// Install required Julia packages (run once per machine)
-jl: import Pkg; Pkg.add("StatsModels"); Pkg.add("GLM"); Pkg.add("StatsBase"); Pkg.add("Random"); Pkg.add("NearestNeighbors")
+*---------------------------------------
+* Initialize Julia
+*---------------------------------------
+jl start, threads(16)
+jl: using DataFrames, StatsModels, GLM, StatsBase, Random, NearestNeighbors, Statistics, Base.Threads
 
-// Load Julia libs for the run
-jl: using DataFrames, StatsModels, GLM, StatsBase, Random, NearestNeighbors
+jl save df
 
-// Pull current Stata data into Julia and set up locals
-jl: df = DataFrame(Stata.reload())
-jl: controls = Symbol[split("`controls'", " ")...]
-jl: outcomes = Symbol[split("`outcomes'", " ")...]
-jl: treats = Dict(2 => "`lab2'", 3 => "`lab3'", 4 => "`lab4'", 5 => "`lab5'")
+jl: controls   = Symbol.(split("`controls'", " "))
+jl: outcomes   = Symbol.(split("`outcomes'", " "))
+jl: treatments = [2,3,4,5]
+jl: labels = Dict( ///
+    1 => "Cis boys", ///
+    2 => "Cis girls", ///
+    3 => "Trans girls", ///
+    4 => "Trans boys", ///
+    5 => "NB AMABs", ///
+	6 => "NB AFABs" ///
+)
 
-// Define ATT bootstrap with PSM and clustered resampling
-jl: function att_boot(df, treat_val, outcome; controls, cluster=:rbd, reps=100, nn_list=[1,2,3,4]); ///
-     sdf = df[(df.gender .== 1) .| (df.gender .== treat_val), :]; ///
-     sdf.treat = sdf.gender .== treat_val; ///
-     if sum(sdf.treat)==0 || sum(.!sdf.treat)==0; return DataFrame(); end; ///
-     f = Term(:treat) ~ sum(Term.(controls)); ///
-     m = glm(f, sdf, Binomial(), LogitLink()); ///
-     sdf.pr = predict(m); ///
-     clusters = unique(sdf[!, cluster]); ///
-     out = DataFrame(outcome=String[], treat=String[], nn=Int[], b=Float64[], se=Float64[], lb=Float64[], ub=Float64[]); ///
-     for nn in nn_list
-         atts = Float64[];
-         for b in 1:reps
-             boot_ids = sample(clusters, length(clusters); replace=true);
-             boot = reduce(vcat, [sdf[sdf[!, cluster] .== cid, :] for cid in boot_ids]);
-             control = boot[boot.treat .== false, :];
-             treated = boot[boot.treat .== true, :];
-             if nrow(control)==0 || nrow(treated)==0; continue; end;
-             tree = KDTree(reshape(control.pr, 1, :));
-             diffs = Float64[];
-             for row in eachrow(treated)
-                 k = min(nn, nrow(control));
-                 idxs = knn(tree, [row.pr], k)[1];
-                 push!(diffs, row[outcome] - mean(control[outcome][idxs]));
-             end;
-             if !isempty(diffs); push!(atts, mean(diffs)); end;
-         end;
-         if !isempty(atts)
-             m_att = mean(atts);
-             se_att = std(atts);
-             qs = quantile(atts, [0.025, 0.975]);
-             push!(out, (string(outcome), treats[treat_val], nn, m_att, se_att, qs[1], qs[2]));
-         end;
-     end;
-     return out;
-     end
+jl: reps_map   = Dict(2=>10, 3=>100, 4=>100, 5=>100)
 
-// Run bootstrap for all outcomes/treatments and return to Stata
-jl: results = DataFrame(outcome=String[], treat=String[], nn=Int[], b=Float64[], se=Float64[], lb=Float64[], ub=Float64[])
-jl: for outcome in outcomes; for tr in keys(treats); reps = tr == 2 ? 10 : 100; res = att_boot(df, tr, outcome; controls=controls, reps=reps); append!(results, res); end; end
-jl: Stata.store!(results)
+cd "$code"
+jl: include("julia/att_bootstrap.jl")
+cd "$tmp"
+
+// Clean controls/outcomes and drop missings
+jl: ctrl_raw  = split("`controls'", " ")
+jl: controls  = Symbol.(unique(filter(name -> name in names(df), ctrl_raw)))
+jl: outcomes  = Symbol.(unique(split("`outcomes'", " ")))
+jl: needed    = vcat([:gender, :rbd], outcomes, controls)
+jl: df_clean  = dropmissing(df, needed)
+
+// Full run
+jl: results = att_boot_all(df_clean, treatments, outcomes, controls; ///
+    cluster=:rbd, reps_map=reps_map, default_reps=100, ///
+    nn_list=[1,2,3,4], seed=123, label_map=labels) 
+
+// Importing in Stata
+jl: using CSV
+jl: CSV.write("results_psm.csv", results)
+
+import delimited "results_psm.csv", clear
+rm "results_psm.csv"
+
+stop 
 
 
 * Back in Stata: reshape to wide and write tables (by outcome)

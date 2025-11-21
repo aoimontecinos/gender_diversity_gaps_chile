@@ -136,8 +136,8 @@ b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) mtitles("Baseline" ///
  "Discr: Orien." "Discr: Expr." "All") label replace nonotes ///
 stats(cm_mean cw_pc tw_pc tm_pc nbm_pc nbf_pc r2 N, ///
 fmt(%9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %12.0f) ///
-labels(`"Cis Men Mean"' `"CW Gap Variation"' `"TW Gap Variation"' ///
-`"TM Gap Variation"' `"NBM Gap Variation"' `"NBF Gap Variation"' ///
+labels(`"Cis boys mean"' `"Cis girls gap variation"' `"Trans girls gap variation"' ///
+`"Trans boys gap variation"' `"NB AMABs gap variation"' `"NB AFABs gap variation"' ///
 `"R-squared"' `"Observations"' ))
 }
 restore 
@@ -241,8 +241,8 @@ b(%5.3f) se(%5.3f) star(* 0.1 ** 0.05 *** 0.01) mtitles("Baseline" ///
  "Discr: Orien." "Discr: Expr." "All") label replace nonotes ///
 stats(cm_mean cw_pc tw_pc tm_pc nbm_pc nbf_pc r2 N, ///
 fmt(%9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f %12.0f) ///
-labels(`"Cis Men Mean"' `"CW Gap Variation"' `"TW Gap Variation"' ///
-`"TM Gap Variation"' `"NBM Gap Variation"' `"NBF Gap Variation"' ///
+labels(`"Cis boys mean"' `"Cis girls gap variation"' `"Trans girls gap variation"' ///
+`"Trans boys gap variation"' `"NB AMABs gap variation"' `"NB AFABs gap variation"' ///
 `"R-squared"' `"Observations"' ))
 }
 restore 
@@ -367,7 +367,7 @@ esttab using "$tables/robustness_oaxaca_math_norm_within_rbd.tex", ///
 b(3) se(3) nodepvar star(* 0.1 ** 0.05 *** 0.01) booktabs nonotes ///
 mgroups("10th grade Mathematics Score", pattern (1 0 0 0 0 0 0 0) ///
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
-mtitles("Cis Women" "Trans Women" "Trans Men" "NB Male" "NB Female") label replace
+mtitles("Cis girls" "Trans girls" "Trans boys" "NB AMABs" "NB AFABs") label replace
 
 
 // Math confidence
@@ -386,7 +386,7 @@ esttab using "$tables/robustness_oaxaca_math_confidence_within_rbd.tex", ///
 b(3) se(3) nodepvar star(* 0.1 ** 0.05 *** 0.01) booktabs nonotes ///
 mgroups("10th grade Mathematics Confidence", pattern (1 0 0 0 0 0 0 0) ///
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
-mtitles("Cis Women" "Trans Women" "Trans Men" "NB Male" "NB Female") label replace
+mtitles("Cis girls" "Trans girls" "Trans boys" "NB AMABs" "NB AFABs") label replace
 
 
 *-----------------------------------------------------------------
@@ -416,7 +416,7 @@ svmat results_conf, names(col)
 
 gen gender = _n 
 
-label define gndr 1 "Cis Woman" 2 "Trans Woman" 3 "Trans Man" 4 "NB Male" 5 "NB Female", replace
+label define gndr 1 "Cis girls" 2 "Trans girls" 3 "Trans boys" 4 "NB AMABs" 5 "NB AFABs", replace
 label values gender gndr
 
 reshape long value, i(gender) j(component) string

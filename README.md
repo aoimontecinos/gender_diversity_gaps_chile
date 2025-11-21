@@ -3,7 +3,7 @@
 Replication materials for "The Gender Diversity Gaps in Mathematics" (Francine Montecinos and Dante Contreras). The package contains Stata code for data construction, analysis, and outputs, plus an R script for propensity-score estimation.
 
 ## Data availability
-- Agencia de la Calidad de la Educacion (SIMCE microdata, 10th grade 2022 and linked 4th grade 2012-2016): confidential; access requires a data request to the Agencia. These files are **not redistributed** here; place approved files in `Dropbox/Universidad/Tesis/data/src`.
+- Agencia de la Calidad de la Educacion (SIMCE microdata, 10th grade 2022 and linked 4th grade 2012-2016): confidential; access requires a data request to the Agencia. These files are **not redistributed** here; place approved files in `data/src` (on this machine: `C:/Users/aoimo/Dropbox/PROJECT_Gender_Diversity_Gaps/data/src`).
 - Ministerio de Educacion (MINEDUC) administrative data (teacher assignment records, GPA/attendance, study plans): open-access from MINEDUC; not redistributed here. Place downloads in `data/src` alongside SIMCE files.
 - The pipeline writes intermediate data to `data/tmp` and `data/dta` and the merged analysis file `data/proc/simce_mineduc_elsoc_2022b.dta` used by the R script.
 
@@ -29,6 +29,7 @@ Replication materials for "The Gender Diversity Gaps in Mathematics" (Francine M
 - Hardware: AMD Ryzen 7 7730U with Radeon Graphics, 40 GB RAM, 2 TB SSD
 - Stata 19.5 (code compatible with Stata 17+)
 - R 4.5.1
+- The Stata makefile auto-sets `DIR` for usernames `aoimo` (Windows Dropbox at `C:/Users/aoimo/Dropbox/PROJECT_Gender_Diversity_Gaps`) and `fam2175` (macOS path). Update `code/stata/0_makefile.do` if running under a different username or Dropbox location.
 
 ## Required packages
 **Stata (install from SSC unless noted)**
@@ -62,8 +63,8 @@ install.packages(c(
 ```
 
 ## How to run
-1. Set the Dropbox root expected by the scripts. Edit `code/stata/0_makefile.do` to set `global dropbox "<your Dropbox path>"` before running. 
-2. Place the SIMCE (confidential) and MINEDUC (open) raw files in `data/src` under that Dropbox path. The workflow writes intermediate files to `data/tmp` and `data/dta`.
+1. Confirm `DIR` is set correctly in `code/stata/0_makefile.do` for your username. On this machine it already points to `C:/Users/aoimo/Dropbox/PROJECT_Gender_Diversity_Gaps`.
+2. Place the SIMCE (confidential) and MINEDUC (open) raw files in `data/src` under that `DIR`. The workflow writes intermediate files to `data/tmp` and `data/dta`.
 3. Open Stata in the repository root and run:
    ```
    do code/stata/0_makefile.do
@@ -87,3 +88,4 @@ install.packages(c(
 
 ## Used datasets and replication status
 - Empirical analysis with confidential SIMCE microdata (not redistributed). MINEDUC administrative data are open-access but not included here. Cleaning and analysis code for all tables/figures is included; no synthetic data are used.
+- Gender variable values/labels (consistent across Stata, R, and exports): `1=Cis boys`, `2=Cis girls`, `3=Trans girls`, `4=Trans boys`, `5=NB AMABs`, `6=NB AFABs`.

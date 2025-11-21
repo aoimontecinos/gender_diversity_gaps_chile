@@ -324,8 +324,8 @@ replace gender = 3 if sex_alu==1 & cest_p01_2do==2        // trans woman
 replace gender = 4 if sex_alu==2 & cest_p01_2do==1        // trans man
 replace gender = 5 if sex_alu==1 & cest_p01_2do==3        // NB male
 replace gender = 6 if sex_alu==2 & cest_p01_2do==3        // NB female
-label define gendr 1 "Cis Man" 2 "Cis Woman" 3 "Trans Woman" ///
-                  4 "Trans Man" 5 "NB Male" 6 "NB Female"
+label define gendr 1 "Cis boys" 2 "Cis girls" 3 "Trans girls" ///
+                  4 "Trans boys" 5 "NB AMABs" 6 "NB AFABs"
 label values gender gendr
 
 * dummies *
@@ -569,20 +569,20 @@ foreach v in math_norm math_norm_4to lect_norm lect_norm_4to {
 * 12.  GENDER LABEL AS STRING
 *------------------------------------------------------------
 gen str12 genders = ""
-replace genders = "Cis Man"       if gender==1
-replace genders = "Cis Woman"     if gender==2
-replace genders = "Trans Woman"   if gender==3
-replace genders = "Trans Man"     if gender==4
-replace genders = "NB Male"       if gender==5
-replace genders = "NB Female"     if gender==6
+replace genders = "Cis boys"      if gender==1
+replace genders = "Cis girls"     if gender==2
+replace genders = "Trans girls"   if gender==3
+replace genders = "Trans boys"    if gender==4
+replace genders = "NB AMABs"      if gender==5
+replace genders = "NB AFABs"      if gender==6
 
 label values gender gendr
 
-label var cis_woman "Cis Woman"
-label var trans_woman "Trans Woman"
-label var trans_man "Trans Man"
-label var nb_male "NB Male"
-label var nb_female "NB Female"
+label var cis_woman "Cis girls"
+label var trans_woman "Trans girls"
+label var trans_man "Trans boys"
+label var nb_male "NB AMABs"
+label var nb_female "NB AFABs"
 
 label var math_norm "10th Math Score"
 

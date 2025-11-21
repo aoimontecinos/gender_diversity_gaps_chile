@@ -152,7 +152,7 @@ coefplot ///
     keep(${genders}) ///
     xline(0) ///
     xtitle("Gender") ///
-    ytitle("Math Scores Gap compared to Cis Men") ///
+    ytitle("Math Scores Gap compared to Cis boys") ///
     legend(position(bottom) row(1) size(small) title("") ///
            label(1 "10th" 2 "20th" 3 "30th" 4 "40th" 5 "50th" 6 "60th" 7 "70th" 8 "80th" 9 "90th")) ///
     ciopts(recast(rcap) lwidth(*0.5)) ///	
@@ -161,8 +161,8 @@ coefplot ///
     swapnames ///
 	xscale(range(0 10)) ///
     eqlabels(" " " " " " " " " ", labsize(tiny) labcolor(white)) ///
-    xlabel(0 "." 1 "Cis Woman" 3 "Trans Woman" 5 "Trans Man" ///
-	7 "NB Male" 9 "NB Female" 10 ".", angle(45)) ///
+    xlabel(0 "." 1 "Cis girls" 3 "Trans girls" 5 "Trans boys" ///
+	7 "NB AMABs" 9 "NB AFABs" 10 ".", angle(45)) ///
     xtitle("") yline(0, lpattern(dash)) ///
     ylabel(-0.3(0.1)0.3)
 

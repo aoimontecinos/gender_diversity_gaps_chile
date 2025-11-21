@@ -32,11 +32,11 @@ set seed 123
 
 //labels (with spaces) and their dummy ids
 local ids 2 3 4 5
-local lab2 "Cis woman"
-local lab3 "Trans woman"
-local lab4 "Trans man"
-local lab5 "NB Male"
-local lab6 "NB Female"
+local lab2 "Cis girls"
+local lab3 "Trans girls"
+local lab4 "Trans boys"
+local lab5 "NB AMABs"
+local lab6 "NB AFABs"
 
 foreach outcome of varlist math_norm math_confidence_2do {
 tempfile results
