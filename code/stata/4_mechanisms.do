@@ -248,16 +248,23 @@ labels(`"Cis boys mean"' `"Cis girls gap variation"' `"Trans girls gap variation
 restore 
 
 * Small Figure about this 
+
+preserve 
+// Residualize outcomes 
+reghdfe math_norm $final_controls, absorb(rbd) resid
+predict math_norm_res, resid
+
+reghdfe math_confidence_2do math_norm $final_controls, absorb(rbd) resid
+predict math_confidence_res, resid
+
 qui {
 cap drop math_confidence_aux
-gen math_confidence_aux = - math_confidence_2do	
+gen math_confidence_aux = - math_confidence_res
 	
-eststo m0: reghdfe math_confidence_aux $genders math_norm $final_controls  [pw = w2], ///
-absorb(rbd) vce(cl codigocurso)
+eststo m0: reghdfe math_confidence_aux $genders [pw = w2], vce(cl codigocurso)
 
-eststo m6: reghdfe math_confidence_aux $genders math_norm $final_controls ///
-social media discr_sexo discr_orien discr_expr [pw = w2], ///
-absorb(rbd) vce(cl codigocurso)
+eststo m6: reghdfe math_confidence_aux $genders ///
+social media discr_sexo discr_orien discr_expr [pw = w2], vce(cl codigocurso)
 cap drop math_confidence_aux
 }
 
@@ -270,65 +277,18 @@ legend(order(1 "Baseline" 2 "Controlling for Discrimination + Social and Cyber A
 xlabel(0(.05).2) xtitle("10th grade Mathematics Confidence Gap", size(medsmall))
 
 graph export "$figures/math_confidence_discr_aggr_mech.pdf", replace
-
-*___________________________________________________*
-* 2. Heterogeneity by School 
-*___________________________________________________*
-
-
-eststo m1: qui reghdfe math_norm $genders $final_controls [pw = w2] ///
-if rbd_religious==0, absorb(rbd) vce(cl codigocurso)
-qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols "$ \checkmark $", replace 
-qui estadd local school4 "$ \checkmark $", replace 
-
-eststo m2: qui reghdfe math_norm $genders $final_controls [pw = w2] ///
-if rbd_religious==1, absorb(rbd) vce(cl codigocurso)
-qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols "$ \checkmark $", replace 
-qui estadd local school4 "$ \checkmark $", replace 
-
-eststo m3: qui reghdfe math_confidence_2do math_norm ///
-$genders $final_controls [pw = w2] if rbd_religious==0, ///
-absorb(rbd) vce(cl codigocurso)
-qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols "$ \checkmark $", replace 
-qui estadd local school4 "$ \checkmark $", replace 
-
-eststo m4: qui reghdfe math_confidence_2do math_norm ///
-$genders $final_controls [pw = w2] if rbd_religious==1, ///
-absorb(rbd) vce(cl codigocurso)
-qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols "$ \checkmark $", replace 
-qui estadd local school4 "$ \checkmark $", replace 
-
-
-esttab m1 m2 m3 m4 using "$tables/heterogeneity_religious_school.tex", ///
-b(3) se(3) star(* 0.1 ** 0.05 *** 0.01) keep($genders math_norm) ///
-mgroups("Mathematics Score" "Mathematics Confidence", pattern (1 0 1 0) ///
-prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
-noobs collabels(none) label replace nonotes nodepvar booktabs ///
-mtitles("Regular Program" "Religious Program" ///
-"Regular Program" "Religious Program") ///
-s(fixeds icontrols school4 r2 N, fmt( %12.0f %12.0f %12.0f a2  %12.0f) ///
-label("School FE" "Demographics" "4th grade Math" "R-Squared" "Observations")) 
+restore 
 
 *___________________________________________________*
 * 3. OB Decomposition
 *___________________________________________________*
 
 // Residualize outcomes 
-global genders "cis_woman trans_woman trans_man nb_male nb_female"
-global demographics "imr edad_alu edad_alu2 i.income_decile i.mother_education_cat immigrant_mother school_change"
-global final_controls "$demographics math_norm_4to math_confidence_4to"
 reghdfe math_norm $final_controls, absorb(rbd) resid
 predict math_norm_res, resid
 
 reghdfe math_confidence_2do math_norm $final_controls, absorb(rbd) resid
 predict math_confidence_res, resid
-
-// Final controls list 
-global final_controls_list "edad_alu edad_alu2 income_decile mother_education immigrant_mother school_change math_norm_4to math_confidence_4to"
 
 // Residualize mechanisms 
 foreach var of varlist physical verbal social media discr_* {
@@ -439,3 +399,45 @@ restore
 graph export "$figures/oaxaca_confidence_decomposition.pdf", replace
 
 
+*___________________________________________________*
+* 3. Heterogeneity by School 
+*___________________________________________________*
+use "$data/proc/main.dta", clear
+gen w0 = 1
+
+eststo m1: qui reghdfe math_norm $genders $final_controls [pw = w2] ///
+if rbd_religious==0, absorb(rbd) vce(cl codigocurso)
+qui estadd local fixeds "$ \checkmark $", replace 
+qui estadd local icontrols "$ \checkmark $", replace 
+qui estadd local school4 "$ \checkmark $", replace 
+
+eststo m2: qui reghdfe math_norm $genders $final_controls [pw = w2] ///
+if rbd_religious==1, absorb(rbd) vce(cl codigocurso)
+qui estadd local fixeds "$ \checkmark $", replace 
+qui estadd local icontrols "$ \checkmark $", replace 
+qui estadd local school4 "$ \checkmark $", replace 
+
+eststo m3: qui reghdfe math_confidence_2do math_norm ///
+$genders $final_controls [pw = w2] if rbd_religious==0, ///
+absorb(rbd) vce(cl codigocurso)
+qui estadd local fixeds "$ \checkmark $", replace 
+qui estadd local icontrols "$ \checkmark $", replace 
+qui estadd local school4 "$ \checkmark $", replace 
+
+eststo m4: qui reghdfe math_confidence_2do math_norm ///
+$genders $final_controls [pw = w2] if rbd_religious==1, ///
+absorb(rbd) vce(cl codigocurso)
+qui estadd local fixeds "$ \checkmark $", replace 
+qui estadd local icontrols "$ \checkmark $", replace 
+qui estadd local school4 "$ \checkmark $", replace 
+
+
+esttab m1 m2 m3 m4 using "$tables/heterogeneity_religious_school.tex", ///
+b(3) se(3) star(* 0.1 ** 0.05 *** 0.01) keep($genders math_norm) ///
+mgroups("Mathematics Score" "Mathematics Confidence", pattern (1 0 1 0) ///
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
+noobs collabels(none) label replace nonotes nodepvar booktabs ///
+mtitles("Regular Program" "Religious Program" ///
+"Regular Program" "Religious Program") ///
+s(fixeds icontrols school4 r2 N, fmt( %12.0f %12.0f %12.0f a2  %12.0f) ///
+label("School FE" "Demographics" "4th grade Math" "R-Squared" "Observations")) 

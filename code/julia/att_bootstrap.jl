@@ -6,6 +6,8 @@ using Random
 using NearestNeighbors
 using Statistics
 using Base.Threads
+using CategoricalArrays
+using Logging
 
 const DEFAULT_NN_LIST = [1, 2, 3, 4]
 
@@ -39,6 +41,26 @@ function att_once(sdf::DataFrame, outcome::Symbol, nn::Integer)
     return isempty(diffs) ? NaN : mean(diffs)
 end
 
+# Single-draw ATT with k-NN matching, restricting matches within a cluster (e.g., school)
+function att_once_within(sdf::DataFrame, outcome::Symbol, nn::Integer, cluster::Symbol)
+    atts = Float64[]
+    for sch in unique(sdf[!, cluster])
+        subsample = sdf[sdf[!, cluster] .== sch, :]
+        control = subsample[subsample.treat .== false, :]
+        treated = subsample[subsample.treat .== true, :]
+        if nrow(control) == 0 || nrow(treated) == 0
+            continue
+        end
+        tree = KDTree(reshape(control.pr, 1, :))
+        for row in eachrow(treated)
+            k = min(nn, nrow(control))
+            idxs = knn(tree, [row.pr], k)[1]
+            push!(atts, row[outcome] - mean(control[!, outcome][idxs]))
+        end
+    end
+    return isempty(atts) ? NaN : mean(atts)
+end
+
 # Clustered bootstrap ATT for one treatment/outcome
 function att_boot(
     df::DataFrame,
@@ -50,6 +72,9 @@ function att_boot(
     nn_list::Vector{Int} = DEFAULT_NN_LIST,
     seed::Int = 1234,
     label_map::Dict{Int, String} = Dict{Int, String}(),
+    within_school::Bool = true,
+    pooled_fe::Bool = false,
+    fallback_to_pooled::Bool = true,
 )
     out = empty_results()
     cis_label = get(label_map, 1, "Cis boys")
@@ -65,8 +90,34 @@ function att_boot(
 
     # propensity model
     f = Term(:treat) ~ sum(Term.(controls))
-    m = glm(f, sdf0, Binomial(), LogitLink())
-    sdf0.pr = predict(m)
+    m = nothing
+    try
+        if pooled_fe
+            sdf0[!, cluster] = categorical(sdf0[!, cluster])
+            m = glm(f + Term(cluster), sdf0, Binomial(), LogitLink())
+        else
+            m = glm(f, sdf0, Binomial(), LogitLink())
+        end
+    catch err
+        if pooled_fe && fallback_to_pooled
+            @warn "FE propensity model failed; falling back to pooled model" err
+            try
+                m = glm(f, sdf0, Binomial(), LogitLink())
+            catch err2
+                @warn "Pooled propensity model failed; returning empty results" err2
+                return out
+            end
+        else
+            @warn "Propensity model failed; returning empty results" err
+            return out
+        end
+    end
+    try
+        sdf0.pr = predict(m)
+    catch err
+        @warn "Propensity prediction failed; returning empty results" err
+        return out
+    end
 
     clusters = unique(sdf0[!, cluster])
 
@@ -74,8 +125,13 @@ function att_boot(
         atts = fill(NaN, reps)
         Threads.@threads for b in 1:reps
             rng = MersenneTwister(seed + Threads.threadid() * 100000 + b)
-            boot_ids = sample(rng, clusters, length(clusters); replace = true)
-            boot = reduce(vcat, [sdf0[sdf0[!, cluster] .== cid, :] for cid in boot_ids])
+            boot = if within_school
+                boot_ids = sample(rng, clusters, length(clusters); replace = true)
+                reduce(vcat, [sdf0[sdf0[!, cluster] .== cid, :] for cid in boot_ids])
+            else
+                idxs = sample(rng, 1:nrow(sdf0), nrow(sdf0); replace = true)
+                sdf0[idxs, :]
+            end
             atts[b] = att_once(boot, outcome, nn)
         end
         vals = filter(!isnan, atts)
@@ -103,6 +159,9 @@ function att_boot_all(
     nn_list::Vector{Int} = DEFAULT_NN_LIST,
     seed::Int = 1234,
     label_map::Dict{Int, String} = Dict{Int, String}(),
+    within_school::Bool = true,
+    pooled_fe::Bool = false,
+    fallback_to_pooled::Bool = true,
 )
     results = empty_results()
     for outcome in outcomes
@@ -118,6 +177,9 @@ function att_boot_all(
                 nn_list = nn_list,
                 seed = seed,
                 label_map = label_map,
+                within_school = within_school,
+                pooled_fe = pooled_fe,
+                fallback_to_pooled = fallback_to_pooled,
             )
             if nrow(res) > 0
                 append!(results, res)

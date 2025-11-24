@@ -1,7 +1,6 @@
-cls
 *______________________________________________________________
 * Author: Francine Montecinos
-* Last edition: November 19, 2025
+* Last edition: November 21, 2025
 * Action: Robustness Checks 
 *______________________________________________________________
 
@@ -10,19 +9,26 @@ cls
 *______________________________________________________________
 
 use "$data/proc/main.dta", clear
-keep mrun rbd codigocurso math* gender ${genders} $final_covs
 
 // prepare labels and settings
-local outcomes math_norm math_confidence_2do
-local controls ${final_covs}
 local ids 2 3 4 5 6
-local controls "${final_covs}"
-local outcomes "math_norm math_confidence_2do"
+
+local controls ""
+foreach name in $final_covs {
+	local controls `controls' `name'_dm
+}
+
+
+local outcomes math_norm math_confidence_2do
+
 local lab2 "Cis girls"
 local lab3 "Trans girls"
 local lab4 "Trans boys"
 local lab5 "NB AMABs"
 local lab6 "NB AFABs"
+
+keep mrun rbd codigocurso math* gender `controls' ${genders}
+
 
 *---------------------------------------
 * Initialize Julia
@@ -34,7 +40,7 @@ jl save df
 
 jl: controls   = Symbol.(split("`controls'", " "))
 jl: outcomes   = Symbol.(split("`outcomes'", " "))
-jl: treatments = [2,3,4,5]
+jl: treatments = [2,3,4,5,6]
 jl: labels = Dict( ///
     1 => "Cis boys", ///
     2 => "Cis girls", ///
@@ -44,7 +50,7 @@ jl: labels = Dict( ///
 	6 => "NB AFABs" ///
 )
 
-jl: reps_map   = Dict(2=>10, 3=>100, 4=>100, 5=>100)
+jl: reps_map   = Dict(2=>50, 3=>500, 4=>500, 5=>500, 6=> 500)
 
 cd "$code"
 jl: include("julia/att_bootstrap.jl")
@@ -66,58 +72,89 @@ jl: results = att_boot_all(df_clean, treatments, outcomes, controls; ///
 jl: using CSV
 jl: CSV.write("results_psm.csv", results)
 
+jl: results 
+
 import delimited "results_psm.csv", clear
 rm "results_psm.csv"
 
-stop 
-
-
-* Back in Stata: reshape to wide and write tables (by outcome)
+* Back in Stata: reshape to wide and write a combined table (both outcomes side-by-side)
 tempfile res_all
 save "`res_all'", replace
 
-foreach outcome of local outcomes {
+tempfile t_norm t_conf
+
+foreach outcome in math_norm math_confidence_2do {
     preserve
     use "`res_all'", clear
     keep if outcome=="`outcome'"
+    gen gender_num = .
+    replace gender_num = 1 if treat=="Cis boys"
+    replace gender_num = 2 if treat=="Cis girls"
+    replace gender_num = 3 if treat=="Trans girls"
+    replace gender_num = 4 if treat=="Trans boys"
+    replace gender_num = 5 if treat=="NB AMABs"
+    replace gender_num = 6 if treat=="NB AFABs"
     drop outcome
-    reshape wide b se lb ub, i(treat) j(nn)
+    reshape wide b se lb ub, i(treat gender_num) j(nn)
+    sort gender_num
 
-    if "`outcome'"=="math_norm" local var_name "Mathematics Score"
-    if "`outcome'"=="math_confidence_2do" local var_name "Mathematics Confidence"
-
-    file open fh using "$tables/psmatch2_robustness_`var_name'.tex", write replace text
-    file write fh "\begin{tabular}{lcccc}" _n
-    file write fh "\toprule" _n
-    file write fh "& \multicolumn{4}{c}{Dependent variable: 10th grade `var_name'} \\" _n
-    file write fh "& \multicolumn{4}{c}{Number of Nearest Neighbors} \\" _n
-    file write fh "Treatment & NN=1 & NN=2 & NN=3 & NN=4 \\" _n
-    file write fh "\midrule" _n
-
-    quietly forvalues r = 1/`=_N' {
-        file write fh "`=treat[`r']'" " & " ///
-            "`: display %6.3f b1[`r']'" " & " ///
-            "`: display %6.3f b2[`r']'" " & " ///
-            "`: display %6.3f b3[`r']'" " & " ///
-            "`: display %6.3f b4[`r']'" " \\" _n
-
-        file write fh " & " ///
-            "(`: display %6.3f se1[`r']')" " & " ///
-            "(`: display %6.3f se2[`r']')" " & " ///
-            "(`: display %6.3f se3[`r']')" " & " ///
-            "(`: display %6.3f se4[`r']')" " \\\\" _n
-
-        if `r' < `=_N' file write fh "\addlinespace" _n
+    // Build stars from normal approximation to bootstrap t-stats
+    forvalues j = 1/4 {
+        gen p`j' = 2*normal(-abs(b`j'/se`j'))
+        gen star`j' = cond(missing(b`j') | missing(se`j'), "", ///
+            cond(p`j'<0.01, "\sym{***}", ///
+            cond(p`j'<0.05, "\sym{**}", ///
+            cond(p`j'<0.1, "\sym{*}", ""))))
+        gen b`j'_fmt  = string(b`j', "%6.3f") + star`j'
+        gen se`j'_fmt = "(" + string(se`j', "%6.3f") + ")"
     }
-    file write fh "\bottomrule" _n
-    file write fh "\end{tabular}" _n
-    file close fh
+
+    keep treat gender_num b*_fmt se*_fmt
+    if "`outcome'"=="math_norm" {
+        rename (b1_fmt b2_fmt b3_fmt b4_fmt) (b1_fmt_mn b2_fmt_mn b3_fmt_mn b4_fmt_mn)
+        rename (se1_fmt se2_fmt se3_fmt se4_fmt) (se1_fmt_mn se2_fmt_mn se3_fmt_mn se4_fmt_mn)
+        save "`t_norm'", replace
+    }
+    else if "`outcome'"=="math_confidence_2do" {
+        rename (b1_fmt b2_fmt b3_fmt b4_fmt) (b1_fmt_mc b2_fmt_mc b3_fmt_mc b4_fmt_mc)
+        rename (se1_fmt se2_fmt se3_fmt se4_fmt) (se1_fmt_mc se2_fmt_mc se3_fmt_mc se4_fmt_mc)
+        save "`t_conf'", replace
+    }
     restore
 }
+
+use "`t_norm'", clear
+merge 1:1 gender_num treat using "`t_conf'"
+drop _merge
+sort gender_num
+
+file open fh using "$tables/psm_robustness_combined.tex", write text replace
+file write fh "{ \def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}" _n
+file write fh "\begin{tabular}{lcccccccc}" _n
+file write fh "\toprule" _n
+file write fh "& \multicolumn{4}{c}{10th grade Mathematics Score} & \multicolumn{4}{c}{10th grade Mathematics Confidence} \\" _n
+file write fh "& \multicolumn{4}{c}{Number of Nearest Neighbors} & \multicolumn{4}{c}{Number of Nearest Neighbors} \\" _n
+file write fh "Treatment & NN=1 & NN=2 & NN=3 & NN=4 & NN=1 & NN=2 & NN=3 & NN=4 \\" _n
+file write fh "\midrule" _n
+
+quietly forvalues r = 1/`=_N' {
+    file write fh "`=treat[`r']'" " & " ///
+        "`=b1_fmt_mn[`r']'" " & " "`=b2_fmt_mn[`r']'" " & " "`=b3_fmt_mn[`r']'" " & " "`=b4_fmt_mn[`r']'" " & " ///
+        "`=b1_fmt_mc[`r']'" " & " "`=b2_fmt_mc[`r']'" " & " "`=b3_fmt_mc[`r']'" " & " "`=b4_fmt_mc[`r']'" " \\" _n
+
+    file write fh " & " ///
+        "`=se1_fmt_mn[`r']'" " & " "`=se2_fmt_mn[`r']'" " & " "`=se3_fmt_mn[`r']'" " & " "`=se4_fmt_mn[`r']'" " & " ///
+        "`=se1_fmt_mc[`r']'" " & " "`=se2_fmt_mc[`r']'" " & " "`=se3_fmt_mc[`r']'" " & " "`=se4_fmt_mc[`r']'" " \\ [0.5em]" _n
+}
+file write fh "\bottomrule" _n
+file write fh "\end{tabular}" _n
+file write fh "}" _n
+file close fh
 
 *______________________________________________________________
 * 2. Changing Trans Samples
 *______________________________________________________________
+use "$data/proc/main.dta", clear
 
 * Creating variables 
 gen r_gender_1 = gender 
@@ -133,7 +170,7 @@ gen trans_binary = 2 if gender==3 | gender==4
 replace trans_binary = 1 if gender==1 | gender==2
 label define trans_binary 1 "Cisgender" 2 "Binary Trans"
 label values trans_binary trans_binary
-label define r_gender_2 1 "Man" 2 "Woman" 3 "Other"
+label define r_gender_2 1 "Boy" 2 "Girl" 3 "Other"
 label values r_gender_2 r_gender_2
 
 
@@ -247,28 +284,37 @@ mtitles("Model 1" "Model 2" "Model 3" "Model 1" "Model 2" "Model 3")
 gen categorical_confidence = cest_p03_09_2do
 
 eststo clear
-qui ologit categorical_confidence i.gender $final_controls, cluster(codigocurso)
+qui ologit categorical_confidence i.gender math_norm $final_controls ///
+[aw = w2], cluster(codigocurso)
 eststo ologit
 foreach o in 1 2 3 4 {
 qui margins, dydx(gender) predict(outcome(`o')) post
 eststo, title(Confidence `o')
+qui estadd local fixeds "$ $", replace 
+qui estadd local controls "$ \checkmark $", replace 
+
 estimates restore ologit
 }
 eststo drop ologit
 
 esttab using "$tables/ologit_confidence.tex", label replace ///
-b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels
+b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels nonotes ///
+mtitles("Not Capable" "Slightly Capable" "Fairly Capable" "Highly Capable") mgroups("10th grade Mathematics Confidence: Categorical Levels",  pattern (1 0 0 0 0) ///
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
+nogaps nonotes booktabs s(fixeds controls N, fmt( %12.0f %12.0f %12.0f) ///
+label("School FE" "Controls" "Observations"))
+
 
 *------------------------------------------------------------
 * Aggression (Categorical). Focus on social aggressions.
 *------------------------------------------------------------
-gen categorical_social = 1 if cest_p14_03_2do==1 | cest_p14_04_2do==1
-forv i = 2/5{
-replace categorical_social = `i' if cest_p14_03_2do==`i' | cest_p14_04_2do==`i'
-}
+gen categorical_social = cest_p14_03_2do 
+gen categorical_media = cest_p14_04_2do 
+
+keep if categorical_media!=.| categorical_social!=.
 
 eststo clear
-qui ologit categorical_social i.gender $final_controls, cluster(codigocurso)
+qui ologit categorical_social i.gender $final_controls [aw = w2], cluster(codigocurso)
 eststo ologit
 foreach o in 1 2 3 4 5 {
 qui margins, dydx(gender) predict(outcome(`o')) post
@@ -277,6 +323,21 @@ estimates restore ologit
 }
 eststo drop ologit
 
-esttab using "$tables/ologit_aggression.tex", label replace ///
-b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels
+qui ologit categorical_media i.gender $final_controls [aw = w2], cluster(codigocurso)
+eststo ologit
+foreach o in 1 2 3 4 5 {
+qui margins, dydx(gender) predict(outcome(`o')) post
+eststo, title(Aggression `o')
+estimates restore ologit
+}
+eststo drop ologit
 
+
+esttab using "$tables/ologit_aggression.tex", label replace ///
+b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels nonotes ///
+mtitles("Never" "CT a year" "CT a month" "CT a week" "Every day" /// 
+"Never" "CT a year" "CT a month" "CT a week" "Every day") ///
+mgroups("Social Aggression" "Social Media Aggression",  pattern (1 0 0 0 0 1) ///
+prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
+nogaps nonotes booktabs s(fixeds controls N, fmt( %12.0f %12.0f %12.0f) ///
+label("School FE" "Controls" "Observations"))

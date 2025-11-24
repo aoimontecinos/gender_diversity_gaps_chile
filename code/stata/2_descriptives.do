@@ -54,7 +54,6 @@ coefplot (m1, offset(-.375) color(blue%50) ///
 		5 "Social" 7 "Social Media") ///
         pos(6) rows(1) size(medsmall) ///
         symxsize(*1.5) symysize(*1.5)) ///
-        swapnames ///
         eqlabels("Cis girls" "Trans girls" ///
 		"Trans boys" "NB AMABs" "NB AFABs")
 

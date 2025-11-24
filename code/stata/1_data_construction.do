@@ -446,6 +446,7 @@ gen discr_expresion = cest_p07_05_2do
 	
 * Extra
 destring edad_alu, replace
+gen double edad_alu2 = edad_alu^2
 	
 *------------------------------------------------------------
 * 10.  PEER AND SCHOOL-LEVEL AGGREGATES
@@ -508,65 +509,39 @@ foreach v of varlist $student_controls math_confidence_4to math_norm_4to {
 * basic repeat flag *
 gen byte repitente = (agno_4to!=2016)
 
-
-cap drop rbd*repitente
-
-* Leave one out instrument: We'll take all the "hold-backers" from schools, and remove the student's value. Then we obtain the average for all students without our student i. 
-
-cap drop tot_rbd_4to*
-bys rbd_4to: egen tot_rbd_4to = count(mrun)
-bys rbd_4to: egen tot_rbd_4to_rep = sum(repitente)
-gen rbd_4to_repitente_out = (tot_rbd_4to_rep - repitente)/(tot_rbd_4to - 1) 
-
-bys rbd_2do: egen tot_rbd_2do = count(mrun)
-bys rbd_2do: egen tot_rbd_2do_rep = sum(repitente)
-gen rbd_2do_repitente_out = (tot_rbd_2do_rep - repitente)/(tot_rbd_2do - 1) 
-
 *------------------------------------------------------------
 * 10.  FINAL SAMPLE, IPW & MILLS RATIO
 *------------------------------------------------------------
-gen double edad_alu2 = edad_alu^2
-gen rbd_repitente_out = (rbd_4to_repitente_out + rbd_2do_repitente_out)/2 if rbd_4to!=.
-
-cap drop final_sample phat ipw imr 
-* optional quadratic age term *
-
-global demographics "edad_alu edad_alu2 immigrant_mother school_change i.income_decile i.mother_education_cat "
-global final_controls "$demographics math_norm_4to math_confidence_4to"
-					 					 
+* Leave one out instrument: We'll take all the "not in sample" from schools, and remove the student's value. Then we obtain the average for all students without our student i. 
+gen imr = 1 
 reghdfe math_norm i.gender $final_controls, absorb(rbd) vce(cluster codigocurso)
-gen byte final_sample = e(sample)
+drop imr 
 
-probit final_sample rbd_repitente_out ///
-		edad_alu edad_alu2 repitente  ///
-		rbd_2do_asistencia4 rbd_2do_prom_gral4 rbd_2do_school_change ///
-		rbd_2do_sex_alu rbd_2do_edad_alu rbd_2do_income_decile ///
-		rbd_2do_immigrant_mother rbd_2do_mother_education_cat ///
-		rbd_2do_math_norm_4to rbd_2do_math_confidence_4to
+gen byte final_sample = e(sample)
+gen byte not_sample = final_sample==0
+
+bys rbd_4to: egen tot_rbd_4to = count(mrun)
+bys rbd_4to: egen tot_rbd_4to_rep = sum(not_sample)
+gen rbd_4to_not_sample_out = (tot_rbd_4to_rep - not_sample)/(tot_rbd_4to - 1) 
+
+bys rbd_2do: egen tot_rbd_2do = count(mrun)
+bys rbd_2do: egen tot_rbd_2do_rep = sum(not_sample)
+gen rbd_2do_not_sample_out = (tot_rbd_2do_rep - not_sample)/(tot_rbd_2do - 1) 
+
+gen rbd_not_sample_out = (rbd_4to_not_sample_out + rbd_2do_not_sample_out)/2 if rbd_4to!=.
+
+cap drop phat ipw imr 
+probit final_sample rbd_not_sample_out ///
+					rbd_2do_math_norm_4to rbd_2do_math_confidence_4to ///
+					rbd_2do_income_decile rbd_2do_mother_education_cat
 	  
-predict double phat , pr
+predict double phat, pr
 gen double ipw = final_sample/phat
 gen double imr = normalden(invnorm(phat))/phat
 label var imr "Inverse Mills ratio"
 
-
-save "$data/proc/simce_mineduc_elsoc_2022_full", replace
-
 *------------------------------------------------------------
-* 11.  RE-STANDARDISE SCORES WITHIN FINAL SAMPLE
-*------------------------------------------------------------
-keep if final_sample==1
-
-cap drop ones 
-gen ones = 1 
-foreach v in math_norm math_norm_4to lect_norm lect_norm_4to {
-    zscore `v' , gen(__z) by(ones)
-    replace `v' = __z
-    drop __z
-}
-
-*------------------------------------------------------------
-* 12.  GENDER LABEL AS STRING
+* 11.  GENDER LABEL AS STRING
 *------------------------------------------------------------
 gen str12 genders = ""
 replace genders = "Cis boys"      if gender==1
@@ -584,7 +559,7 @@ label var trans_man "Trans boys"
 label var nb_male "NB AMABs"
 label var nb_female "NB AFABs"
 
-label var math_norm "10th Math Score"
+label var math_norm "10th grade math score"
 
 // Variable labels for regression output
 label variable edad_alu "Age"
@@ -593,7 +568,9 @@ label variable immigrant_mother "Immigrant mother"
 label variable school_change "Changed schools"
 label variable math_norm_4to "4th grade math score"
 label variable math_confidence_4to "4th grade math confidence"
-label variable rbd_repitente_out "Leave-one-out repetition rate"
+label variable math_norm_4to "4th grade math score"
+label variable math_confidence_4to "4th grade math confidence"
+label variable rbd_not_sample_out "Leave-one-out non response rate"
 
 // Income decile labels
 label var income_decile "Income decile"
@@ -625,9 +602,26 @@ label define mother_ed_collapsed_lbl ///
     7 "Mother's Education: Vocational's degree complete" ///
 	8 "Mother's Education: Bachelor's degree complete"
 
+label var asistencia4 "4th grade attendance"
+label var prom_gral4 "4th grade GPA"
+		
 label values mother_education_cat mother_ed_collapsed_lbl
 label variable mother_education_cat "Mother's education"
 
+save "$data/proc/simce_mineduc_elsoc_2022_full", replace
+
+*------------------------------------------------------------
+* 12.  RE-STANDARDISE SCORES WITHIN FINAL SAMPLE
+*------------------------------------------------------------
+keep if final_sample==1
+
+cap drop ones 
+gen ones = 1 
+foreach v in math_norm math_norm_4to lect_norm lect_norm_4to {
+    zscore `v' , gen(__z) by(ones)
+    replace `v' = __z
+    drop __z
+}
 
 *------------------------------------------------------------
 * 13. Heterogeneity by religious school 

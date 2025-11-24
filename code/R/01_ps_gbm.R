@@ -55,7 +55,7 @@ final_controls <- c(
   # 4th grade controls
   "math_norm_4to", "math_confidence_4to", 
   "dependencia4_1", "dependencia4_2", "dependencia4_3", 
-  "prom_gral4_norm", "asistencia4_norm",
+  "prom_gral4_dm", "asistencia4_dm",
   
   # Extra 
   "imr"
