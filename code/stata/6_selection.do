@@ -16,7 +16,9 @@ hist rbd_not_sample_out, percent
 graph export "$figures/hist_rbd_not_sample_out.pdf", replace
 
 // Regression on outcomes
-reghdfe math_norm math_confidence_2do $final_controls i.gender 
+use "$data/proc/main", clear 
+
+reghdfe math_norm math_confidence_2do $final_controls i.gender w2
 keep if e(sample)
 
 eststo clear 
@@ -27,13 +29,11 @@ qui estadd local school4 "$ \checkmark $", replace
 
 eststo m2: reghdfe math_confidence_2do rbd_not_sample_out math_norm_4to math_confidence_4to, absorb(rbd) vce(cl codigocurso)
 qui estadd local fixeds "$ \checkmark $", replace 
-qui estadd local icontrols "$ \checkmark $", replace 
-qui estadd local school4 "$ \checkmark $", replace 
 
 esttab m1 m2 using "$tables/reg_selection_math_norm_rbd_not_sample_out.tex", /// 
 nobase noobs mtitle("10th grade Mathematics Score" "10th grade Mathematics Confidence") ///
 collabels(none) label replace nonotes nodepvar booktabs ///
-s(fixeds icontrols school4 r2 N, fmt( %12.0f %12.0f %12.0f a2  %12.0f) ///
-label("School FE" "Demographics" "4th grade Math" "R-Squared" "Observations")) ///
+s(fixeds r2 N, fmt( %12.0f a2  %12.0f) ///
+label("School FE" "R-Squared" "Observations")) ///
  b(3) se(3) star(* 0.1 ** 0.05 *** 0.01) drop(_cons)
  

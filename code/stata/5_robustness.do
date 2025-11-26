@@ -218,13 +218,13 @@ abs(rbd) vce(cl codigocurso)
 qui estadd local fixeds "$ \checkmark $", replace 
 qui estadd local controls "$ \checkmark $", replace 
 
-mmqreg math_norm i.r_gender_1 ${final_controls}, ///
+*mmqreg math_norm i.r_gender_1 ${final_controls}, ///
 absorb(rbd) nols quantile(10 30 50 70 90 95)
-outreg2 using "$tables/robust_qreg.tex", label replace
+*outreg2 using "$tables/robust_qreg.tex", label replace
 
 esttab m1 m2 m3 m4 m5 m6 m7 using "$tables/rob_nb_sample.tex", label replace ///
 b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels ///
-mgroups("" "Aggression" "Discrimination", pattern (1 0 1 0 1 0 0) ///
+mgroups("Mathematics Outcomes" "Aggression" "Discrimination", pattern (1 0 1 0 1 0 0) ///
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
 keep(*.r_gender_1) nogaps nonotes booktabs ///
 s(fixeds controls N, fmt( %12.0f %12.0f %12.0f) ///
@@ -319,6 +319,9 @@ eststo ologit
 foreach o in 1 2 3 4 5 {
 qui margins, dydx(gender) predict(outcome(`o')) post
 eststo, title(Aggression `o')
+qui estadd local fixeds "$ $", replace 
+qui estadd local controls "$ \checkmark $", replace 
+
 estimates restore ologit
 }
 eststo drop ologit
@@ -328,6 +331,9 @@ eststo ologit
 foreach o in 1 2 3 4 5 {
 qui margins, dydx(gender) predict(outcome(`o')) post
 eststo, title(Aggression `o')
+qui estadd local fixeds "$ $", replace 
+qui estadd local controls "$ \checkmark $", replace 
+
 estimates restore ologit
 }
 eststo drop ologit
