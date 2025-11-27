@@ -15,12 +15,11 @@ Replication materials for "The Gender Diversity Gaps in Mathematics" (Francine M
 - `code/stata/0_makefile.do` - Entry point: sets globals/paths, logging, and runs the full Stata pipeline.
 - `code/stata/1_data_construction.do` - Builds analysis-ready data from raw sources.
 - `code/stata/1a_final_dataset.do` - Assembles the final dataset and calls the R propensity-score script via `rsource`.
-- `code/stata/2_descriptives.do`, `2a_TableA1.do`, `2b_Figures.do` - Descriptive statistics and appendix table; `2b` is a placeholder.
-- `code/stata/3_results.do`, `3a_Tables.do`, `3b_Figures.do`, `3c_results_gpa.do` - Main and GPA-focused results; `3a`/`3b` are placeholders.
+- `code/stata/2_descriptives.do`, `2a_TableA1.do` - Descriptive statistics and appendix table.
+- `code/stata/3_results.do`-  Main and GPA-focused results.
 - `code/stata/4_mechanisms.do` - Mechanism analyses.
 - `code/stata/5_robustness.do` - Robustness checks (exact matching, heterogeneity, oaxaca).
 - `code/stata/6_selection.do` - Selection correction appendix.
-- `code/stata/xx_*` - Auxiliary/experimental analyses (e.g., peers, alternate descriptives, instruments).
 - `code/stata/helpers/scheme-bluegray_tnr.scheme` - Custom Stata graph scheme.
 - `code/R/01_ps_gbm.R` - Gradient-boosting propensity scores (twang) using the merged Stata data.
 
@@ -40,6 +39,7 @@ Replication materials for "The Gender Diversity Gaps in Mathematics" (Francine M
 - `outreg2`
 - `psmatch2`
 - `oaxaca`
+- `julia'
 
 Install example:
 ```
@@ -51,6 +51,7 @@ ssc install outreg2, replace
 ssc install psmatch2, replace
 ssc install oaxaca, replace
 ssc install rsource, replace
+ssc install julia, replace
 ```
 
 **R (CRAN)**
