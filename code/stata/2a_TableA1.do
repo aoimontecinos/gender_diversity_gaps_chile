@@ -229,7 +229,7 @@ use `results', clear
 list, sep(0) abbreviate(32)
 
 // Define the LaTeX table file with appropriate note and group formatting
-file open myfile using "$tables/descriptives.tex", write replace
+file open myfile using "$tables/Table_1.tex", write replace
 // Write the LaTeX table header
 file write myfile "\begin{tabular}{lcccccc}" _n
 file write myfile "\hline" _n

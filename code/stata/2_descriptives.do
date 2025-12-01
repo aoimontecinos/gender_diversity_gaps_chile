@@ -57,7 +57,7 @@ coefplot (m1, offset(-.375) color(blue%50) ///
         eqlabels("Cis girls" "Trans girls" ///
 		"Trans boys" "NB AMABs" "NB AFABs")
 
-graph export "$figures/figure4_aggression.pdf", replace
+graph export "$figures/Figure_A2b.pdf", replace
 
 *-------------------------------------------------
 * Correlation between aggressions and math score
@@ -90,58 +90,7 @@ xlabel(1 "D1" 2 "D2" 3 "D3" 4 "D4" 5 "D5" ///
 legend(order(2 "Physical" 4 "Social Media" 6 "Social" 8 "Verbal") ///
 pos(6) row(1) size(medsmall))
 
-graph export "$figures/corr_aggressions_math.pdf", replace
-
-*-------------------------------------------------
-* Correlation between aggressions and math score
-*-------------------------------------------------
-
-local i = 0
-foreach vv of varlist discr* {
-qui su `vv'
-replace `vv' = `vv' - 1 if r(max)==2
-qui{
-local i = `i' + 1
-reghdfe `vv' i.math_deciles, absorb(rbd)
-eststo m`i': margins math_deciles, post
-}
-}
-
-coefplot m1 m2 m3, vertical ///
-xtitle("Math Score Decile", size(medsmall)) ///
-ytitle("Percent of students who reported discrimination", size(medsmall)) ///
-xlabel(1 "D1" 2 "D2" 3 "D3" 4 "D4" 5 "D5" 6 "D6" 7 "D7" 8 "D8" 9 "D9" 10 "D10") ///
-legend(order(2 "Sex or Gender" 4 "Sexual Orientation" 6 "Way of Looking") ///
-pos(6) row(1) size(medsmall))
-graph export "$figures/corr_discrimination_math.pdf", replace
-
-*----------------------------------------------------
-* Raw Math Confidence Gap by Math Score. All Genders 
-*----------------------------------------------------
-
-binsreg math_confidence_2do math_norm, by(gender) ///
-ytitle("Math Confidence at 10th grade", size(medsmall))  ///
-xtitle("Math Score at 10th grade", size(medsmall)) savedata("$tmp/fig_aux")
-
-preserve 
-use "$tmp/fig_aux.dta", clear 
-
-tw (scatter dots_fit dots_x if gender==1, color(blue%80) msymbol(O)) ///
-(scatter dots_fit dots_x if gender==2, color(ebblue%80) msymbol(Oh)) ///
-(scatter dots_fit dots_x if gender==3, color(cranberry%80) msymbol(D)) ///
-(scatter dots_fit dots_x if gender==4, color(red%80) msymbol(Dh)) ///
-(scatter dots_fit dots_x if gender==5, color(green%80) msymbol(T)) ///
-(scatter dots_fit dots_x if gender==6, color(midgreen%80) msymbol(Th)), ///
-legend(order(1 "Cis boys" 2 "Cis girls" 3 "Trans girls" ///
-4 "Trans boys" 5 "NB AMABs" 6 "NB AFABs") row(2)) ///
-ytitle("Math Confidence at 10th grade", size(medsmall))  ///
-xtitle("Math Score at 10th grade", size(medsmall)) 
-
-graph export "$figures/binsreg_math_confidence_score.pdf", replace
-
-rm "$tmp/fig_aux.dta"
-
-restore 
+graph export "$figures/Figure_A2a.pdf", replace
 
 *----------------------------------------------------
 * Raw Math Confidence Gap by Math Score. 3 Genders
@@ -164,52 +113,7 @@ legend(order(1 "Cis boys" 2 "Cis girls" 3 "Gender Diverse Students") row(1)) ///
 ytitle("Math Confidence at 10th grade", size(medsmall)) name(binsreg_raw, replace) ///
 xtitle("Math Score at 10th grade", size(medsmall)) yscale(range(.35 1)) ylabel(.4(.1)1)
 
-graph export "$figures/binsreg_math_confidence_score_2.pdf", replace
+graph export "$figures/Figure_1.pdf", replace
 
 rm "$tmp/fig_aux.dta"
 restore 
-
-
-*--------------------------------------------------
-* Estimated gap using controls, within school
-*--------------------------------------------------
-
-reghdfe math_confidence_2do $final_controls [pw = w2], absorb(rbd) resid
-predict math_confidence_resid, resid
-su math_confidence_2do 
-replace math_confidence_resid = math_confidence_resid + `r(mean)'
-
-gen math_norm2 = math_norm*math_norm
-reghdfe math_confidence_resid ///
-gender##c.math_norm gender##c.math_norm2 [pw = w2] if gender==1 
-predict heterogeneity_baseline, xb
-
-reghdfe math_confidence_resid ///
-gender##c.math_norm gender##c.math_norm2 [pw = w2]
-predict heterogeneity, xb
-
-gen gap = heterogeneity - heterogeneity_baseline
-label var gap "Estimated Mathematics Confidence Gap"
-
-binsreg gap math_norm, by(gender) nbins(15) savedata("$tmp/fig_aux")
-preserve 
-use "$tmp/fig_aux.dta", clear 
-
-tw (scatter dots_fit dots_x if gender==1, color(blue%80) msymbol(O)) ///
-(scatter dots_fit dots_x if gender==2, color(ebblue%80) msymbol(Oh)) ///
-(scatter dots_fit dots_x if gender==3, color(cranberry%80) msymbol(D)) ///
-(scatter dots_fit dots_x if gender==4, color(red%80) msymbol(Dh)) ///
-(scatter dots_fit dots_x if gender==5, color(green%80) msymbol(T)) ///
-(scatter dots_fit dots_x if gender==6, color(midgreen%80) msymbol(Th)), ///
-legend(order(1 "Cis boys" 2 "Cis girls" 3 "Trans girls" ///
-4 "Trans boys" 5 "NB AMABs" 6 "NB AFABs") row(2)) ///
-ytitle("Estimated Mathematics Confidence Gap", size(medsmall))  ///
-xtitle("Math Score at 10th grade", size(medsmall)) ylabel(-.3(.1).2) ///
-yscale(range(-.3 .16)) yline(0, lpattern(dash))
-
-graph export "$figures/binsreg_math_confidence_gap.pdf", replace
-
-rm "$tmp/fig_aux.dta"
-restore 
-
-

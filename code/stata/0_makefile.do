@@ -19,16 +19,14 @@ graph set window fontface "Times New Roman"
 set matsize 11000
 set seed 123
 
-if c(username)=="aoimo"	    global DIR ///
-"C:/Users/aoimo/Dropbox/PROJECT_Gender_Diversity_Gaps"
-if c(username)=="fam2175"	global DIR ///
-"/Users/fam2175/Library/CloudStorage/Dropbox/PROJECT_Gender_Diversity_Gaps"
+// Replace the following directory with your own replication package folder 
+global DIR "C:\Users\aoimo\Dropbox\PROJECT_Gender_Diversity_Gaps\replication_package" 
 
 *-------------------------------------------------------------------------------
 * 1. Directories and Log 
 *-------------------------------------------------------------------------------
 
-global code "$DIR/gender_diversity_gaps_chile/code"
+global code "$DIR/code"
 global data "$DIR/data"
 global results "$DIR/results"
 cap mkdir $results

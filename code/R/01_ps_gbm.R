@@ -21,15 +21,7 @@ library(gridExtra)
 # Set locals and defining the environment 
 #------------------------------------------------------------------------------
 
-if (Sys.info()["user"] == "aoimo") {
-  dropbox <- "C:/Users/aoimo/Dropbox"
-}
-
-if (Sys.info()["user"] == "fam2175") {
-  dropbox <- "/Users/fam2175/Dropbox/"
-}
-
-dir <- paste0(dropbox, "/PROJECT_Gender_Diversity_Gaps")
+dir <- "C:\Users\aoimo\Dropbox\PROJECT_Gender_Diversity_Gaps\replication_package" 
 data <- paste0(dir, "/data")
 
 src <- paste0(data, "/src")
@@ -121,7 +113,7 @@ pdf(file = paste0(figures,"/my_plot.pdf"))
   # 3. Export 
   combined <- arrangeGrob(grobs = plot_list_fixed, ncol = 2)
   
-  ggsave(paste0(figures,"/balance_mnps.pdf"),
+  ggsave(paste0(figures,"/Figure_A1.pdf"),
          plot   = combined,
          width  = 10,
          height = 8)

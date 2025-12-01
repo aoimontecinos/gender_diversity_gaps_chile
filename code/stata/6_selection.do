@@ -8,12 +8,12 @@ label var final_sample "Share in Final Sample"
 label var rbd_not_sample_out "Leave-One-Out Non Response Rate"
 binscatter final_sample rbd_not_sample_out, nq(50) ylabel(.4(.1).9) ///
 ytitle("Share in Final Sample") xtitle("Leave-One-Out Non Response Rate")
-graph export "$figures/binsreg_final_sample_rbd_not_sample_out.pdf", replace
+graph export "$figures/Figure_B1b.pdf", replace
 
 reghdfe math_norm rbd_not_sample_out math_norm_4to if final_sample==1, absorb(rbd)
 
 hist rbd_not_sample_out, percent
-graph export "$figures/hist_rbd_not_sample_out.pdf", replace
+graph export "$figures/Figure_B1a.pdf", replace
 
 // Regression on outcomes
 use "$data/proc/main", clear 
@@ -30,7 +30,7 @@ qui estadd local school4 "$ \checkmark $", replace
 eststo m2: reghdfe math_confidence_2do rbd_not_sample_out math_norm_4to math_confidence_4to, absorb(rbd) vce(cl codigocurso)
 qui estadd local fixeds "$ \checkmark $", replace 
 
-esttab m1 m2 using "$tables/reg_selection_math_norm_rbd_not_sample_out.tex", /// 
+esttab m1 m2 using "$tables/Table_B1.tex", /// 
 nobase noobs mtitle("10th grade Mathematics Score" "10th grade Mathematics Confidence") ///
 collabels(none) label replace nonotes nodepvar booktabs ///
 s(fixeds r2 N, fmt( %12.0f a2  %12.0f) ///

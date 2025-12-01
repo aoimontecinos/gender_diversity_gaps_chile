@@ -128,7 +128,7 @@ merge 1:1 gender_num treat using "`t_conf'"
 drop _merge
 sort gender_num
 
-file open fh using "$tables/psm_robustness_combined.tex", write text replace
+file open fh using "$tables/Table_A7.tex", write text replace
 file write fh "{ \def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}" _n
 file write fh "\begin{tabular}{lcccccccc}" _n
 file write fh "\toprule" _n
@@ -222,7 +222,7 @@ qui estadd local controls "$ \checkmark $", replace
 absorb(rbd) nols quantile(10 30 50 70 90 95)
 *outreg2 using "$tables/robust_qreg.tex", label replace
 
-esttab m1 m2 m3 m4 m5 m6 m7 using "$tables/rob_nb_sample.tex", label replace ///
+esttab m1 m2 m3 m4 m5 m6 m7 using "$tables/Table_A8.tex", label replace ///
 b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels ///
 mgroups("Mathematics Outcomes" "Aggression" "Discrimination", pattern (1 0 1 0 1 0 0) ///
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
@@ -230,50 +230,6 @@ keep(*.r_gender_1) nogaps nonotes booktabs ///
 s(fixeds controls N, fmt( %12.0f %12.0f %12.0f) ///
 label("School FE" "Controls" "Observations"))
 
-*------------------------------------
-** Sex and gender interactions.
-*------------------------------------
-
-* Interaction model (comparing by sex, trans and nb)
-eststo m1: reghdfe math_norm sex_alu##gender_diverse $final_controls, ///
-absorb(rbd) vce(cl codigocurso)
-eststo m1a: margins sex_alu, dydx(gender_diverse) post
-
-* Interaction model (comparing by sex, only trans binary)
-eststo m2: reghdfe math_norm sex_alu##gender_diverse $final_controls if ///
-gender!=5 & gender!=6, ///
-absorb(rbd) vce(cl codigocurso)
-eststo m2a: margins sex_alu, dydx(gender_diverse) post
-
-* Interaction model (comparing by sex, only non binary)
-eststo m3: reghdfe math_norm sex_alu##gender_diverse $final_controls if ///
-gender!=3 & gender!=4, ///
-absorb(rbd) vce(cl codigocurso)
-eststo m3a: margins sex_alu, dydx(gender_diverse) post
-
-* Interaction model (comparing by sex, trans and nb)
-eststo m4: reghdfe math_confidence_2do sex_alu##gender_diverse ///
-$final_controls_confidence, absorb(rbd) vce(cl codigocurso)
-eststo m4a: margins sex_alu, dydx(gender_diverse) post
-
-* Interaction model (comparing by sex, only trans binary)
-eststo m5: reghdfe math_confidence_2do sex_alu##gender_diverse ///
-$final_controls_confidence if gender!=5 & gender!=6, ///
-absorb(rbd) vce(cl codigocurso)
-eststo m5a: margins sex_alu, dydx(gender_diverse) post
-
-* Interaction model (comparing by sex, only non binary)
-eststo m6: reghdfe math_confidence_2do sex_alu##gender_diverse ///
-$final_controls_confidence if gender!=3 & gender!=4, ///
-absorb(rbd) vce(cl codigocurso)
-eststo m6a: margins sex_alu, dydx(gender_diverse) post
-
-esttab m1 m2 m3 m4 m5 m6 m1a m2a m3a m4a m5a m6a using ///
-"$tables/robust_ame.tex", label replace ///
-b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) ///
-keep(2.gender_diverse:1.sex_alu 2.sex_alu 2.gender_diverse ///
-2.sex_alu#2.gender_diverse) ///
-mtitles("Model 1" "Model 2" "Model 3" "Model 1" "Model 2" "Model 3")
 
 *______________________________________________________________
 * 3. Categorical variables 
@@ -297,7 +253,7 @@ estimates restore ologit
 }
 eststo drop ologit
 
-esttab using "$tables/ologit_confidence.tex", label replace ///
+esttab using "$tables/Table_A9.tex", label replace ///
 b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels nonotes ///
 mtitles("Not Capable" "Slightly Capable" "Fairly Capable" "Highly Capable") mgroups("10th grade Mathematics Confidence: Categorical Levels",  pattern (1 0 0 0 0) ///
 prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
@@ -339,7 +295,7 @@ estimates restore ologit
 eststo drop ologit
 
 
-esttab using "$tables/ologit_aggression.tex", label replace ///
+esttab using "$tables/Table_A10.tex", label replace ///
 b(%5.3f) se(%5.3f) ty star(* 0.1 ** 0.05 *** 0.01) nobaselevels nonotes ///
 mtitles("Never" "CT a year" "CT a month" "CT a week" "Every day" /// 
 "Never" "CT a year" "CT a month" "CT a week" "Every day") ///

@@ -1,92 +1,43 @@
-# Gender Diversity Gaps in Mathematics - Replication Package
+# The Gender Diversity Gaps in Mathematics
+# Replication Package 
+## Code Author: Francine Montecinos. 
 
-Replication materials for "The Gender Diversity Gaps in Mathematics" (Francine Montecinos and Dante Contreras). The package contains Stata code for data construction, analysis, and outputs, plus an R script for propensity-score estimation.
+Raw data were not uploaded to Editorial Manager because the replication package exceeds 500 MB. Download the full package (code, data, outputs) here:  
+[Link to Replication Package](https://www.dropbox.com/scl/fi/33magnmvjfl9j9a5jsm7i/replication_package.zip?rlkey=9wkauh2aobm8mgik7nvodyuv5&dl=0)
 
-## Data availability
-- Agencia de la Calidad de la Educacion (SIMCE microdata, 10th grade 2022 and linked 4th grade 2012-2016): confidential; access requires a data request to the Agencia. These files are **not redistributed** here; place approved files in `data/src` (on this machine: `C:/Users/aoimo/Dropbox/PROJECT_Gender_Diversity_Gaps/data/src`).
-- Ministerio de Educacion (MINEDUC) administrative data (teacher assignment records, GPA/attendance, study plans): open-access from MINEDUC; not redistributed here. Place downloads in `data/src` alongside SIMCE files.
-- The pipeline writes intermediate data to `data/tmp` and `data/dta` and the merged analysis file `data/proc/simce_mineduc_elsoc_2022b.dta` used by the R script.
+## Contents
+- `code/` (Stata, R, Julia)
+- `data` 
+-- `data/src` 
+-- `data/tmp` 
+-- `data/dta`
+-- `data/proc`
+- `figures/` (exported PDFs)
+- `tables/` (LaTeX tables)
+- `README.pdf` and this `README.md`
 
-## Rights and permissions
-- I certify that the authors have legitimate access to and permission to use all datasets employed in the manuscript.
-- I certify that redistribution/publication of data in this replication package is permitted only for derived outputs; confidential SIMCE microdata are **not** redistributed. See `LICENSE` for code licensing.
-
-## Repository layout
-- `code/stata/0_makefile.do` - Entry point: sets globals/paths, logging, and runs the full Stata pipeline.
-- `code/stata/1_data_construction.do` - Builds analysis-ready data from raw sources.
-- `code/stata/1a_final_dataset.do` - Assembles the final dataset and calls the R propensity-score script via `rsource`.
-- `code/stata/2_descriptives.do`, `2a_TableA1.do` - Descriptive statistics and appendix table.
-- `code/stata/3_results.do`-  Main and GPA-focused results.
-- `code/stata/4_mechanisms.do` - Mechanism analyses.
-- `code/stata/5_robustness.do` - Robustness checks (exact matching, heterogeneity, oaxaca).
-- `code/stata/6_selection.do` - Selection correction appendix.
-- `code/stata/helpers/scheme-bluegray_tnr.scheme` - Custom Stata graph scheme.
-- `code/R/01_ps_gbm.R` - Gradient-boosting propensity scores (twang) using the merged Stata data.
-
-## Software and hardware used
-- OS: Windows 11 Pro
-- Hardware: AMD Ryzen 7 7730U with Radeon Graphics, 40 GB RAM, 2 TB SSD
-- Stata 19.5 (code compatible with Stata 17+)
-- R 4.5.1
-- The Stata makefile auto-sets `DIR` for usernames `aoimo` (Windows Dropbox at `C:/Users/aoimo/Dropbox/PROJECT_Gender_Diversity_Gaps`) and `fam2175` (macOS path). Update `code/stata/0_makefile.do` if running under a different username or Dropbox location.
-
-## Required packages
-**Stata (install from SSC unless noted)**
-- `ftools` 
-- `gtools` 
-- `reghdfe`
-- `estout` 
-- `outreg2`
-- `psmatch2`
-- `oaxaca`
-- `julia'
-
-Install example:
-```
-ssc install ftools, replace
-ssc install gtools, replace
-ssc install reghdfe, replace
-ssc install estout, replace
-ssc install outreg2, replace
-ssc install psmatch2, replace
-ssc install oaxaca, replace
-ssc install rsource, replace
-ssc install julia, replace
-```
-
-**R (CRAN)**
-`dplyr`, `ggplot2`, `tidyverse`, `lme4`, `merTools`, `twang`, `kableExtra`, `survey`, `parallel`, `haven` (explicitly used). Install with:
-```
-install.packages(c(
-  "dplyr","ggplot2","tidyverse","lme4","merTools",
-  "twang","kableExtra","survey","parallel","haven"
-))
-```
-
-## How to run
-1. Confirm `DIR` is set correctly in `code/stata/0_makefile.do` for your username. On this machine it already points to `C:/Users/aoimo/Dropbox/PROJECT_Gender_Diversity_Gaps`.
-2. Place the SIMCE (confidential) and MINEDUC (open) raw files in `data/src` under that `DIR`. The workflow writes intermediate files to `data/tmp` and `data/dta`.
-3. Open Stata in the repository root and run:
-   ```
+## Setup
+1. Unzip `replication_package.zip`, then unzip `data.zip` inside it so you have `data/src`, `data/tmp`, `data/dta`, and `data/proc` alongside `code/`, `figures/`, and `tables/`.
+2. Software and packages
+   - Stata 17+ (used with Stata 19.5) and SSC: `ftools`, `gtools`, `reghdfe`, `estout`, `outreg2`, `psmatch2`, `oaxaca`, `rsource`, `julia`.
+   - R 4.5.1 with `dplyr`, `ggplot2`, `tidyverse`, `lme4`, `merTools`, `twang`, `kableExtra`, `survey`, `parallel`, `haven`.
+   - Julia 1.x with `DataFrames`, `StatsModels`, `GLM`, `StatsBase`, `Random`, `NearestNeighbors`, `Statistics`, `CategoricalArrays`.
+3. In Stata, open the project root and ensure `global DIR` in `code/stata/0_makefile.do` points to your unzipped folder (pre-set for `C:/Users/aoimo/Dropbox/PROJECT_Gender_Diversity_Gaps/replication_package`). Then run:
+   ```stata
    do code/stata/0_makefile.do
    ```
-   This script sets globals, builds data, and executes `1_data_construction.do` -> `1a_final_dataset.do` (which calls the R script) -> `2_descriptives.do` -> `3_results.do` -> `4_mechanisms.do` -> `5_robustness.do` -> `6_selection.do`.
+   This runs `1_data_construction.do`, pauses for the R step, then continues through all scripts.
+4. When prompted, run the R script manually:
+   ```bash
+   Rscript code/R/01_ps_gbm.R
+   ```
+   Return to Stata to finish `1a_final_dataset.do`, `2_descriptives.do`, `3_results.do`, `4_mechanisms.do`, `5_robustness.do`, and `6_selection.do`.
 
 ## Outputs
-- Logs: `log/`
-- Tables: `tables/` 
-- Figures: `figures/`
+- Figures: `Figure_1.pdf`, `Figure_2.pdf`, `Figure_3a.pdf`, `Figure_3b.pdf`, plus appendix `Figure_A2a.pdf`, `Figure_A2b.pdf`, `Figure_B1a.pdf`, `Figure_B1b.pdf`.
+- Tables: `Table_1.tex`, `Table_2.tex`, appendix `Table_A1`–`Table_A10`, and `Table_B1` in `tables/`.
 
-## Expected runtime
-- End-to-end pipeline (Stata + R) runs in about 1 hour on the hardware listed above.
-
-## Data citations (for paper and README)
-- Ministerio de Educacion de Chile (2024). Docentes por curso y subsector [open dataset]. Datos Abiertos, Ministerio de Educacion de Chile. From the "Docentes y Asistentes de la Educacion" section. Retrieved from https://datosabiertos.mineduc.cl (accessed August 2024).
-- Ministerio de Educacion de Chile (2024). Rendimiento por estudiante [open dataset]. Datos Abiertos, Ministerio de Educacion de Chile. From the "Estudiantes y Parvulos" section. Retrieved from https://datosabiertos.mineduc.cl (accessed August 2024).
-- Ministerio de Educacion de Chile (2024). Planes y programas de estudio [open dataset]. Datos Abiertos, Ministerio de Educacion de Chile. From the "Establecimientos educacionales" section. Retrieved from https://datosabiertos.mineduc.cl (accessed August 2024).
-- Agencia de la Calidad de la Educacion (2024). Simce segundo medio dataset (2022). Dataset from Agencia de la Calidad de la Educacion, Chile. Includes Segundo Medio data for year 2022; retrieved from https://www.agenciaeducacion.cl (accessed August 2024). Confidential; available upon request.
-- Agencia de la Calidad de la Educacion (2024). Simce cuarto basico dataset (2012-2016). Dataset from Agencia de la Calidad de la Educacion, Chile. Includes Cuarto Basico data for years 2012-2016; retrieved from https://www.agenciaeducacion.cl (accessed August 2024). Confidential; available upon request.
-
-## Used datasets and replication status
-- Empirical analysis with confidential SIMCE microdata (not redistributed). MINEDUC administrative data are open-access but not included here. Cleaning and analysis code for all tables/figures is included; no synthetic data are used.
-- Gender variable values/labels (consistent across Stata, R, and exports): `1=Cis boys`, `2=Cis girls`, `3=Trans girls`, `4=Trans boys`, `5=NB AMABs`, `6=NB AFABs`.
+## Runtime and environment
+- OS: Windows 11 Pro; Hardware: AMD Ryzen 7 7730U, 40 GB RAM, 2 TB SSD.
+- Stata 19.5 (compatible with Stata 17+), R 4.5.1, Julia 1.x.
+- End-to-end runtime: ~1 hour on the above hardware.

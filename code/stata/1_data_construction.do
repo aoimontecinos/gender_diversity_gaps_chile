@@ -277,7 +277,7 @@ replace rbd = rbd_2do if missing(rbd)
 
 * Teacher's data from MINEDUC 
 preserve 
-import delimited "$src/Docentes/Docentes_por_curso_y_subsector.csv", clear
+import delimited "$src/docentes/Docentes_por_curso_y_subsector.csv", clear
 keep if cod_grado==2 & cod_ense2>=5
 keep if doc_genero!=0
 
